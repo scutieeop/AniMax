@@ -43,56 +43,31 @@ passport.use(new DiscordStrategy({
     clientID: process.env.DISCORD_CLIENT_ID,
     clientSecret: process.env.DISCORD_CLIENT_SECRET,
     callbackURL: process.env.DISCORD_CALLBACK_URL,
-    scope: ['identify', 'email', 'guilds.members.read']
+    scope: ['identify', 'email']
 }, async (accessToken, refreshToken, profile, done) => {
     try {
+        // Kullanıcıyı veritabanında ara veya oluştur
         let user = await User.findOne({ discordId: profile.id });
         
-        // Varsayılan roller
-        const userRoles = ['user'];
-        
-        // Kurucu kontrolü
-        const founderIds = process.env.FOUNDER_IDS ? process.env.FOUNDER_IDS.split(',') : [];
-        if (founderIds.includes(profile.id)) {
-            userRoles.push('founder');
-        }
-
-        // Discord sunucusundaki rolleri kontrol et
-        if (profile.guilds) {
-            const guild = profile.guilds.find(g => g.id === process.env.DISCORD_GUILD_ID);
-            if (guild && guild.member) {
-                const memberRoles = guild.member.roles || [];
-                
-                if (memberRoles.includes(DISCORD_ROLES.ADMIN)) userRoles.push('admin');
-                if (memberRoles.includes(DISCORD_ROLES.GUIDE)) userRoles.push('guide');
-                if (memberRoles.includes(DISCORD_ROLES.CONTRIBUTOR)) userRoles.push('contributor');
-            }
-        }
-
-        if (user) {
-            // Kullanıcı varsa bilgilerini güncelle
+        if (!user) {
+            user = await User.create({
+                discordId: profile.id,
+                username: profile.username,
+                email: profile.email,
+                avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null
+            });
+        } else {
+            // Mevcut kullanıcının bilgilerini güncelle
             user.username = profile.username;
             user.email = profile.email;
-            user.avatarHash = profile.avatar;
-            user.roles = [...new Set(userRoles)]; // Tekrarlanan rolleri kaldır
+            user.avatar = profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : user.avatar;
             await user.save();
-            return done(null, user);
         }
-
-        // Yeni kullanıcı oluştur
-        const newUser = new User({
-            username: profile.username,
-            email: profile.email,
-            discordId: profile.id,
-            avatarHash: profile.avatar,
-            roles: [...new Set(userRoles)] // Tekrarlanan rolleri kaldır
-        });
-
-        await newUser.save();
-        done(null, newUser);
-    } catch (err) {
-        console.error('Passport hatası:', err);
-        done(err, null);
+        
+        return done(null, user);
+    } catch (error) {
+        console.error('Passport Discord Strategy Hatası:', error);
+        return done(error, null);
     }
 }));
 
