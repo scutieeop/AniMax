@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniMax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- F12 ve Geliştirici Araçları Engelleme -->
+    <script>
+        // DevTools durumunu kontrol et
+        let isDevToolsOpen = false;
+
+        // DevTools açık mı kontrol et
+        function checkDevTools() {
+            const threshold = 160;
+            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            
+            if (widthThreshold || heightThreshold) {
+                if (!isDevToolsOpen) {
+                    isDevToolsOpen = true;
+                    handleDevTools();
+                }
+            } else {
+                isDevToolsOpen = false;
+            }
+        }
+
+        // DevTools açıldığında yapılacak işlemler
+        function handleDevTools() {
+            // Sayfayı gizle
+            document.documentElement.style.display = 'none';
+            
+            // Uyarı sayfasına yönlendir
+            window.location.href = '/devtools-blocked';
+            
+            // Local storage'a devtools kullanım denemesi kaydet
+            localStorage.setItem('devToolsAttempt', Date.now());
+        }
+
+        // F12 ve diğer kısayolları engelle
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+                (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+                handleDevTools();
+            }
+        });
+
+        // Sağ tıklamayı engelle
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // DevTools açılmasını sürekli kontrol et
+        setInterval(checkDevTools, 1000);
+
+        // Console'u devre dışı bırak
+        Object.defineProperty(window, 'console', {
+            value: {
+                log: function() {},
+                warn: function() {},
+                error: function() {},
+                debug: function() {}
+            },
+            writable: false,
+            configurable: false
+        });
+
+        // Sayfa yüklendiğinde DevTools kontrolü
+        window.addEventListener('load', function() {
+            // Önceki DevTools kullanım denemesi varsa kontrol et
+            const lastAttempt = localStorage.getItem('devToolsAttempt');
+            if (lastAttempt) {
+                const timeDiff = Date.now() - parseInt(lastAttempt);
+                // Son 1 saat içinde deneme yapıldıysa
+                if (timeDiff < 3600000) {
+                    handleDevTools();
+                } else {
+                    localStorage.removeItem('devToolsAttempt');
+                }
+            }
+
+            // Başlangıç kontrolü
+            checkDevTools();
+        });
+
+        // Debug modunu engelle
+        (() => {
+            function ban() {
+                handleDevTools();
+            }
+            
+            // Debug fonksiyonlarını izle
+            const methods = [
+                'debug',
+                'dirxml',
+                'profile',
+                'profileEnd',
+                'clear'
+            ];
+            
+            methods.forEach((method) => {
+                console[method] = ban;
+            });
+        })();
+    </script>
+</head>
+<body> 

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeni Çıkan Animeler - AniMax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0078d4;
+            --secondary: #6b4fbb;
+            --accent: #60cdff;
+            --dark: #1a1a1a;
+            --darker: #0d0d0d;
+            --light: #ffffff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-hover: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background-color: var(--darker);
+            min-height: 100vh;
+            color: var(--light);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .ambient-background {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 120, 212, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(107, 79, 187, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, var(--darker) 0%, var(--darker) 100%);
+            opacity: 0.8;
+        }
+
+        .side-nav {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            transition: margin-left 0.3s ease;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-description {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .anime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2rem;
+        }
+
+        .anime-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 32px rgba(0, 120, 212, 0.2);
+        }
+
+        .anime-card:hover .watch-overlay {
+            opacity: 1;
+        }
+
+        .watch-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .watch-button {
+            padding: 0.8rem 2rem;
+            background: var(--primary);
+            color: var(--light);
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .watch-button:hover {
+            transform: scale(1.1);
+            background: var(--secondary);
+        }
+
+        .anime-poster {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+        }
+
+        .anime-info {
+            padding: 1.5rem;
+        }
+
+        .anime-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+        }
+
+        .anime-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link:hover {
+            background: var(--glass-hover);
+            color: var(--light);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: var(--light);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo-section i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .logo-section span {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 3rem;
+        }
+
+        .pagination-button {
+            padding: 0.75rem 1rem;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--light);
+            transition: all 0.3s ease;
+        }
+
+        .pagination-button:hover {
+            background: var(--glass-hover);
+            transform: translateY(-2px);
+        }
+
+        .pagination-button.active {
+            background: var(--primary);
+            border-color: var(--accent);
+        }
+
+        .new-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--primary);
+            color: var(--light);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+        }
+
+        @media (min-width: 2560px) {
+            .main-content {
+                max-width: 2000px;
+                margin: 0 auto;
+                margin-left: 280px;
+                padding: 3rem;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 2.5rem;
+            }
+
+            .anime-poster {
+                height: 400px;
+            }
+
+            .anime-title {
+                font-size: 1.3rem;
+            }
+
+            .page-title {
+                font-size: 3.5rem;
+            }
+
+            .page-description {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 1536px) {
+            .main-content {
+                max-width: 1400px;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 1280px) {
+            .main-content {
+                max-width: 1200px;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .side-nav {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 2rem;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                width: 100%;
+                margin-bottom: 4rem;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .anime-card {
+                margin-bottom: 1rem;
+            }
+
+            .anime-info {
+                padding: 0.8rem;
+            }
+
+            .anime-title {
+                font-size: 0.9rem;
+                line-height: 1.2;
+                margin-bottom: 0.4rem;
+            }
+
+            .anime-meta {
+                font-size: 0.8rem;
+            }
+
+            .rating-badge {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+
+            .view-count {
+                font-size: 0.7rem;
+            }
+
+            .side-nav {
+                width: 100%;
+                height: 4rem;
+                bottom: 0;
+                top: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 0.5rem;
+                border-right: none;
+                border-top: 1px solid var(--border);
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
+            .logo-section {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 0.5rem;
+                margin-bottom: 0;
+            }
+
+            .nav-link span {
+                display: none;
+            }
+
+            .nav-link i {
+                font-size: 1.2rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .page-description {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .anime-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .anime-card {
+                margin: 0 -1rem 1rem -1rem;
+                border-radius: 0;
+            }
+
+            .anime-info {
+                padding: 1rem;
+            }
+
+            .anime-title {
+                font-size: 1rem;
+            }
+
+            .pagination {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+    <%- include('partials/navbar') %>
+    
+    <div class="ambient-background"></div>
+    
+
+    <!-- Ana İçerik -->
+    <main class="main-content">
+        <!-- Sayfa Başlığı -->
+        <header class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-star"></i>
+                Yeni Eklenen Animeler
+            </h1>
+            <p class="page-description">
+                En son eklenen anime serilerini keşfedin
+            </p>
+        </header>
+
+        <!-- Anime Listesi -->
+        <section class="anime-grid">
+            <% animes.forEach(anime => { %>
+                <div class="anime-card">
+                    <div class="new-badge">
+                        <i class="fas fa-star mr-1"></i>
+                        Yeni
+                    </div>
+                    <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="anime-poster">
+                    <div class="anime-info">
+                        <h3 class="anime-title"><%= anime.name %></h3>
+                        <div class="anime-meta">
+                            <span><i class="fas fa-eye text-blue-500 mr-2"></i><%= anime.viewCount %></span>
+                            <span><i class="fas fa-film text-purple-500 mr-2"></i><%=
+                                anime.seasons ? 
+                                anime.seasons.reduce((total, season) => total + season.episodes.length, 0)
+                                : 0
+                            %> Bölüm</span>
+                        </div>
+                    </div>
+                    <div class="watch-overlay">
+                        <a href="/anime/<%= anime._id %>" class="watch-button">
+                            <i class="fas fa-play"></i>
+                            <span>İzle</span>
+                        </a>
+                    </div>
+                </div>
+            <% }); %>
+        </section>
+
+        <!-- Sayfalama -->
+        <section class="pagination">
+            <% for(let i = 1; i <= totalPages; i++) { %>
+                <a href="/yeni?page=<%= i %>" 
+                   class="pagination-button <%= currentPage === i ? 'active' : '' %>">
+                    <%= i %>
+                </a>
+            <% } %>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuButton = document.getElementById('menuButton');
+        const sideNav = document.querySelector('.side-nav');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        function toggleMenu() {
+            sideNav.classList.toggle('active');
+            menuOverlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        menuButton.addEventListener('click', toggleMenu);
+        menuOverlay.addEventListener('click', toggleMenu);
+
+        // ESC tuşu ile menüyü kapatma
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sideNav.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+
+        // Ekran döndürme olayını dinle
+        window.addEventListener('orientationchange', () => {
+            if (sideNav.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+    });
+    </script>
+</body>
+</html> 

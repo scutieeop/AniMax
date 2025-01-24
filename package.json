@@ -1,0 +1,30 @@
+{
+  "name": "animax",
+  "version": "1.0.0",
+  "description": "Modern Anime İzleme Platformu",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js --ignore public/"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^5.1.0",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "flowbite": "^2.2.1",
+    "mongoose": "^8.9.5",
+    "node-cron": "^3.0.3",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4",
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

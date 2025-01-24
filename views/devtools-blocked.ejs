@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erişim Engellendi - AniMax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0.3) 0, transparent 50%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="text-center p-8 max-w-lg">
+        <div class="mb-8 text-6xl text-red-500">
+            <i class="fas fa-ban"></i>
+        </div>
+        <h1 class="text-3xl font-bold mb-4">Erişim Engellendi</h1>
+        <p class="text-gray-400 mb-6">
+            Geliştirici araçlarının kullanımı tespit edildi. 
+            Güvenlik nedeniyle siteye erişiminiz engellenmiştir.
+        </p>
+        <div class="text-sm text-gray-500 mb-8">
+            Bu engelleme 1 saat boyunca devam edecektir.
+        </div>
+        <a href="/" class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-home mr-2"></i>
+            Ana Sayfaya Dön
+        </a>
+    </div>
+
+    <script>
+        // DevTools kontrolünü devam ettir
+        function checkDevTools() {
+            const threshold = 160;
+            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            
+            if (widthThreshold || heightThreshold) {
+                document.documentElement.style.display = 'none';
+                window.location.reload();
+            }
+        }
+
+        setInterval(checkDevTools, 1000);
+
+        // Sağ tıklamayı engelle
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // F12 ve diğer kısayolları engelle
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+                (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+                window.location.reload();
+            }
+        });
+    </script>
+</body>
+</html> 

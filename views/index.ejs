@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniMax - Anime İzleme Platformu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0078d4;
+            --secondary: #6b4fbb;
+            --accent: #60cdff;
+            --dark: #1a1a1a;
+            --darker: #0d0d0d;
+            --light: #ffffff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-hover: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background-color: var(--darker);
+            min-height: 100vh;
+            color: var(--light);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .ambient-background {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 120, 212, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(107, 79, 187, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, var(--darker) 0%, var(--darker) 100%);
+            opacity: 0.8;
+        }
+
+        .glass-morphism {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-morphism:hover {
+            background: var(--glass-hover);
+        }
+
+        .side-nav {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .featured-anime {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            margin-bottom: 3rem;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .featured-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .featured-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transform: scale(1.1);
+            filter: brightness(0.7) saturate(1.2);
+            transition: transform 0.3s ease;
+        }
+
+        .featured-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to right,
+                rgba(0, 0, 0, 0.9) 0%,
+                rgba(0, 0, 0, 0.7) 50%,
+                rgba(0, 0, 0, 0.4) 100%
+            );
+            backdrop-filter: blur(10px);
+        }
+
+        .featured-content {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+            padding: 4rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .featured-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .featured-description {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .featured-meta {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .featured-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .featured-meta i {
+            color: var(--primary);
+        }
+
+        .watch-now-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--primary);
+            color: var(--light);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+
+        .watch-now-button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 120, 212, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .anime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2rem;
+        }
+
+        .anime-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 32px rgba(0, 120, 212, 0.2);
+        }
+
+        .anime-card:hover .watch-overlay {
+            opacity: 1;
+        }
+
+        .watch-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .watch-button {
+            padding: 0.8rem 2rem;
+            background: var(--primary);
+            color: var(--light);
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .watch-button:hover {
+            transform: scale(1.1);
+            background: var(--secondary);
+        }
+
+        .anime-poster {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+        }
+
+        .anime-info {
+            padding: 1.5rem;
+        }
+
+        .anime-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+        }
+
+        .anime-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link:hover {
+            background: var(--glass-hover);
+            color: var(--light);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: var(--light);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo-section i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .logo-section span {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @media (max-width: 1024px) {
+            .side-nav {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .side-nav.active {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .side-nav {
+                width: 100%;
+                height: 60px;
+                bottom: 0;
+                top: auto;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+                align-items: center;
+                padding: 0 1rem;
+            }
+
+            .side-nav .logo-section {
+                display: none;
+            }
+
+            .nav-link {
+                margin: 0;
+                padding: 0.5rem;
+                flex-direction: column;
+                gap: 0.25rem;
+                font-size: 0.75rem;
+            }
+
+            .nav-link i {
+                font-size: 1.25rem;
+            }
+
+            .main-content {
+                margin-left: 0;
+                margin-bottom: 60px;
+                padding: 1rem;
+            }
+
+            .featured-anime {
+                height: 500px;
+            }
+
+            .featured-content {
+                padding: 2rem;
+            }
+
+            .featured-title {
+                font-size: 2.5rem;
+            }
+        }
+
+        .featured-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            backdrop-filter: blur(10px);
+        }
+
+        .details-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            color: var(--light);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .details-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .featured-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            transform: scale(1.1);
+            filter: brightness(0.7) saturate(1.2) contrast(1.1);
+            transition: transform 0.3s ease;
+        }
+
+        #welcomeModal .relative {
+            min-height: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #modalContent {
+            max-width: 800px;
+            margin: 2rem auto;
+        }
+
+        /* Mobil Uyumlu Stil Güncellemeleri */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                width: 100%;
+                margin-bottom: 4rem;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .anime-card {
+                margin-bottom: 1rem;
+            }
+
+            .anime-info {
+                padding: 0.8rem;
+            }
+
+            .anime-title {
+                font-size: 0.9rem;
+                line-height: 1.2;
+                margin-bottom: 0.4rem;
+            }
+
+            .anime-meta {
+                font-size: 0.8rem;
+            }
+
+            .rating-badge {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+
+            .view-count {
+                font-size: 0.7rem;
+            }
+
+            /* Navbar Mobil Ayarları */
+            .side-nav {
+                width: 100%;
+                height: 4rem;
+                bottom: 0;
+                top: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 0.5rem;
+                border-right: none;
+                border-top: 1px solid var(--border);
+                background: var(--glass);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
+            .logo-section {
+                display: none;
+            }
+
+            .nav-link {
+                padding: 0.5rem;
+                margin-bottom: 0;
+            }
+
+            .nav-link span {
+                display: none;
+            }
+
+            .nav-link i {
+                font-size: 1.2rem;
+            }
+
+            /* Mobil Menü Butonu */
+            #menuButton {
+                display: block;
+                position: fixed;
+                top: 1rem;
+                left: 1rem;
+                z-index: 50;
+                background: var(--glass);
+                padding: 0.8rem;
+                border-radius: 0.5rem;
+                border: 1px solid var(--border);
+            }
+
+            /* Mobil Menü Overlay */
+            #menuOverlay {
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+            }
+        }
+
+        /* Tablet Stilleri */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .anime-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .side-nav {
+                transform: translateX(-100%);
+            }
+
+            .side-nav.active {
+                transform: translateX(0);
+            }
+        }
+
+        /* Küçük Ekran Telefon Stilleri */
+        @media (max-width: 480px) {
+            .anime-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .anime-card {
+                margin: 0 -1rem 1rem -1rem;
+                border-radius: 0;
+            }
+
+            .anime-info {
+                padding: 1rem;
+            }
+
+            .anime-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+    <script>
+        // Sağ tık engelleme
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Klavye kısayollarını engelleme
+        document.addEventListener('keydown', function(e) {
+            // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+            if (
+                e.keyCode === 123 || 
+                (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67))
+            ) {
+                e.preventDefault();
+            }
+            // Ctrl+U
+            if (e.ctrlKey && e.keyCode === 85) {
+                e.preventDefault();
+            }
+            // Ctrl+S
+            if (e.ctrlKey && e.keyCode === 83) {
+                e.preventDefault();
+            }
+        });
+
+        // DevTools açılmasını engelleme
+        (function() {
+            function detectDevTools(allow) {
+                if(allow) return;
+                
+                const element = document.createElement('any');
+                element.__defineGetter__("id", function() {
+                    detectDevTools(true);
+                });
+                
+                setInterval(function() {
+                    console.log(element);
+                    console.clear();
+                }, 1000);
+            }
+            detectDevTools(false);
+        })();
+
+        // Console mesajları
+        console.log = function() {};
+        console.warn = function() {};
+        console.error = function() {};
+        console.debug = function() {};
+        console.info = function() {};
+    </script>
+</head>
+<body class="text-gray-100 min-h-screen">
+    <%- include('partials/navbar') %>
+    
+    <div class="ambient-background"></div>
+    
+
+
+    <!-- Hoş Geldin Modalı -->
+    <div id="welcomeModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-80 backdrop-blur-sm"></div>
+        <div class="relative min-h-screen flex items-center justify-center p-4 overflow-auto">
+            <div class="bg-[#1a1a1a] rounded-2xl w-full max-w-4xl md:max-w-3xl lg:max-w-4xl border border-[rgba(255,255,255,0.1)] shadow-2xl transform scale-95 opacity-0 transition-all duration-500 overflow-hidden" id="modalContent">
+                <!-- Banner Bölümü -->
+                <div class="relative h-40 md:h-56 lg:h-64 overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-600/50 to-purple-600/50"></div>
+                    <img src="/foto/welcome.png" 
+                         alt="AniMax Welcome" 
+                         class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 lg:p-8 text-center">
+                        <p class="text-white/90 text-sm md:text-base lg:text-lg">
+                            Yüksek kaliteli anime deneyimi için doğru yerdesin
+                        </p>
+                    </div>
+                </div>
+    
+                <!-- İçerik Bölümü -->
+                <div class="p-4 md:p-6 lg:p-8 pt-2 md:pt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-8">
+                        <div class="bg-[rgba(255,255,255,0.05)] p-4 md:p-6 rounded-xl hover:transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center gap-2 md:gap-4 mb-2 md:mb-4">
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                                    <i class="fas fa-play-circle text-lg md:text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-base md:text-lg font-semibold">Özel Video Oynatıcı</h3>
+                            </div>
+                            <p class="text-gray-400 text-sm">Kesintisiz ve akıcı bir izleme deneyimi için optimize edilmiş oynatıcı</p>
+                        </div>
+                        <div class="bg-[rgba(255,255,255,0.05)] p-4 md:p-6 rounded-xl hover:transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center gap-2 md:gap-4 mb-2 md:mb-4">
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                                    <i class="fas fa-ban text-lg md:text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-base md:text-lg font-semibold">Reklamsız İzleme</h3>
+                            </div>
+                            <p class="text-gray-400 text-sm">Rahatsız edici reklamlar olmadan anime keyfi</p>
+                        </div>
+                        <div class="bg-[rgba(255,255,255,0.05)] p-4 md:p-6 rounded-xl hover:transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center gap-2 md:gap-4 mb-2 md:mb-4">
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                                    <i class="fas fa-sync text-lg md:text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-base md:text-lg font-semibold">Günlük Güncellemeler</h3>
+                            </div>
+                            <p class="text-gray-400 text-sm">Her gün yeni bölümler ve yeni animeler</p>
+                        </div>
+                        <div class="bg-[rgba(255,255,255,0.05)] p-4 md:p-6 rounded-xl hover:transform hover:scale-105 transition-all duration-300">
+                            <div class="flex items-center gap-2 md:gap-4 mb-2 md:mb-4">
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                                    <i class="fas fa-mobile-alt text-lg md:text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-base md:text-lg font-semibold">Mobil Uyumlu</h3>
+                            </div>
+                            <p class="text-gray-400 text-sm">Her cihazda mükemmel görüntü kalitesi</p>
+                        </div>
+                    </div>
+    
+                    <div class="text-center">
+                        <button id="closeModal" class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold hover:opacity-90 transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                            Hadi Başlayalım!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script>
+    // Modal kontrolü
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('welcomeModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeBtn = document.getElementById('closeModal');
+        
+        // Local storage kontrolü
+        if (!localStorage.getItem('modalShown')) {
+            setTimeout(() => {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }, 100);
+            }, 1000);
+        }
+        
+        closeBtn.addEventListener('click', () => {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            localStorage.setItem('modalShown', 'true');
+        });
+
+        // ESC tuşu ile kapatma
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeBtn.click();
+            }
+        });
+    });
+    </script>
+
+    <!-- Ana İçerik -->
+    <main class="main-content">
+        <!-- Öne Çıkan Anime -->
+        <section class="featured-anime">
+            <div class="featured-image">
+                <img src="<%= popularAnimes[0].imageUrl %>" alt="<%= popularAnimes[0].name %>" 
+                     class="featured-bg">
+                <div class="featured-overlay"></div>
+            </div>
+            <div class="featured-content">
+                <div class="featured-badge mb-4">
+                    <i class="fas fa-crown text-yellow-500 mr-2"></i>
+                    <span class="text-sm font-medium">En Çok İzlenen</span>
+                </div>
+                <h1 class="featured-title"><%= popularAnimes[0].name %></h1>
+                <p class="featured-description">
+                    <%= popularAnimes[0].description || 'Bu popüler animeyi hemen izlemeye başlayın!' %>
+                </p>
+                <div class="featured-meta">
+                    <span class="view-count">
+                        <i class="fas fa-eye"></i>
+                        <%= popularAnimes[0].viewCount %> görüntülenme
+                    </span>
+                    <span class="episode-count">
+                        <i class="fas fa-film"></i>
+                        <%= popularAnimes[0].seasons ? 
+                            popularAnimes[0].seasons.reduce((total, season) => total + season.episodes.length, 0)
+                            : 0 %> bölüm
+                    </span>
+                </div>
+                <div class="flex gap-4">
+                    <a href="/anime/<%= popularAnimes[0]._id %>" class="watch-now-button">
+                        <i class="fas fa-play"></i>
+                        <span>Şimdi İzle</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Popüler Animeler -->
+        <section class="mb-12">
+            <h2 class="section-title">
+                <i class="fas fa-fire text-orange-500"></i>
+                <span>Popüler Animeler</span>
+            </h2>
+            <div class="anime-grid">
+                <% popularAnimes.forEach(anime => { %>
+                    <div class="anime-card">
+                        <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="anime-poster">
+                        <div class="anime-info">
+                            <h3 class="anime-title"><%= anime.name %></h3>
+                            <div class="anime-meta">
+                                <span><i class="fas fa-eye text-blue-500 mr-2"></i><%= anime.viewCount %></span>
+                                <span><i class="fas fa-film text-purple-500 mr-2"></i><%=
+                                    anime.seasons ? 
+                                    anime.seasons.reduce((total, season) => total + season.episodes.length, 0)
+                                    : 0
+                                %> Bölüm</span>
+                            </div>
+                        </div>
+                        <div class="watch-overlay">
+                            <a href="/anime/<%= anime._id %>" class="watch-button">
+                                <i class="fas fa-play"></i>
+                                <span>İzle</span>
+                            </a>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </section>
+
+        <!-- Son Eklenen Animeler -->
+        <section class="mb-12">
+            <h2 class="section-title">
+                <i class="fas fa-clock text-blue-500"></i>
+                <span>Son Eklenenler</span>
+            </h2>
+            <div class="anime-grid">
+                <% recentAnimes.forEach(anime => { %>
+                    <div class="anime-card">
+                        <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="anime-poster">
+                        <div class="anime-info">
+                            <h3 class="anime-title"><%= anime.name %></h3>
+                            <div class="anime-meta">
+                                <span><i class="fas fa-eye text-blue-500 mr-2"></i><%= anime.viewCount %></span>
+                                <span><i class="fas fa-film text-purple-500 mr-2"></i><%=
+                                    anime.seasons ? 
+                                    anime.seasons.reduce((total, season) => total + season.episodes.length, 0)
+                                    : 0
+                                %> Bölüm</span>
+                            </div>
+                        </div>
+                        <div class="watch-overlay">
+                            <a href="/anime/<%= anime._id %>" class="watch-button">
+                                <i class="fas fa-play"></i>
+                                <span>İzle</span>
+                            </a>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+
+    <!-- Mobil Menü Script Güncellemeleri -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuButton = document.getElementById('menuButton');
+        const sideNav = document.querySelector('.side-nav');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        function toggleMenu() {
+            sideNav.classList.toggle('active');
+            menuOverlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        menuButton.addEventListener('click', toggleMenu);
+        menuOverlay.addEventListener('click', toggleMenu);
+
+        // ESC tuşu ile menüyü kapatma
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sideNav.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+
+        // Ekran döndürme olayını dinle
+        window.addEventListener('orientationchange', () => {
+            if (sideNav.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+    });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tüm Animeler - AniMax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #ec4899;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(15, 23, 42, 0.9);
+        }
+
+        body {
+            background-color: var(--dark);
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0.3) 0, transparent 50%);
+            min-height: 100vh;
+            color: var(--light);
+        }
+
+        .anime-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 1rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .anime-title {
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7));
+            backdrop-filter: blur(8px);
+        }
+
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pagination-item {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .pagination-item.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                margin-bottom: 5rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/navbar') %>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-[rgba(255,255,255,0.1)] backdrop-blur-md rounded-lg p-6">
+            <h1 class="text-3xl font-bold mb-8">Tüm Animeler</h1>
+
+            <% if (animes && animes.length > 0) { %>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <% animes.forEach(anime => { %>
+                        <a href="/anime/<%= anime._id %>" class="anime-card group">
+                            <div class="relative aspect-[2/3] overflow-hidden">
+                                <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" 
+                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                                        <h3 class="text-white font-semibold"><%= anime.name %></h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    <% }); %>
+                </div>
+
+                <!-- Sayfalama -->
+                <% if (totalPages > 1) { %>
+                    <div class="pagination">
+                        <% if (currentPage > 1) { %>
+                            <a href="/animeler?page=<%= currentPage - 1 %>" class="pagination-item">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        <% } %>
+
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <a href="/animeler?page=<%= i %>" 
+                               class="pagination-item <%= currentPage === i ? 'active' : '' %>">
+                                <%= i %>
+                            </a>
+                        <% } %>
+
+                        <% if (currentPage < totalPages) { %>
+                            <a href="/animeler?page=<%= currentPage + 1 %>" class="pagination-item">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        <% } %>
+                    </div>
+                <% } %>
+            <% } else { %>
+                <div class="text-center py-12">
+                    <i class="fas fa-film text-4xl text-gray-500 mb-4"></i>
+                    <p class="text-gray-400">Henüz anime eklenmemiş.</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+</body>
+</html> 
