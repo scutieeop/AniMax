@@ -1622,6 +1622,30 @@
                                     </a>
                                 <% } %>
                             </h3>
+                            <% if (user.roles && user.roles.length > 0) { %>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    <% if (user.roles.includes('founder')) { %>
+                                        <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
+                                            <i class="fas fa-crown mr-1"></i> Kurucu
+                                        </span>
+                                    <% } %>
+                                    <% if (user.roles.includes('admin')) { %>
+                                        <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                                            <i class="fas fa-shield-alt mr-1"></i> Admin
+                                        </span>
+                                    <% } %>
+                                    <% if (user.roles.includes('guide')) { %>
+                                        <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                                            <i class="fas fa-book mr-1"></i> Rehber
+                                        </span>
+                                    <% } %>
+                                    <% if (user.roles.includes('uploader')) { %>
+                                        <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+                                            <i class="fas fa-upload mr-1"></i> Paylaşımcı
+                                        </span>
+                                    <% } %>
+                                </div>
+                            <% } %>
                         </div>
                     </div>
                     <form action="/api/comments/add" method="POST" class="space-y-4">
@@ -1683,6 +1707,30 @@
                                                 </a>
                                             <% } %>
                                         </div>
+                                        <% if (comment.user.roles && comment.user.roles.length > 0) { %>
+                                            <div class="flex flex-wrap gap-2 mt-1 mb-2">
+                                                <% if (comment.user.roles.includes('founder')) { %>
+                                                    <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
+                                                        <i class="fas fa-crown mr-1"></i> Kurucu
+                                                    </span>
+                                                <% } %>
+                                                <% if (comment.user.roles.includes('admin')) { %>
+                                                    <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                                                        <i class="fas fa-shield-alt mr-1"></i> Admin
+                                                    </span>
+                                                <% } %>
+                                                <% if (comment.user.roles.includes('guide')) { %>
+                                                    <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                                                        <i class="fas fa-book mr-1"></i> Rehber
+                                                    </span>
+                                                <% } %>
+                                                <% if (comment.user.roles.includes('uploader')) { %>
+                                                    <span class="px-2 py-1 text-xs rounded bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+                                                        <i class="fas fa-upload mr-1"></i> Paylaşımcı
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                        <% } %>
                                         <div class="flex items-center gap-2 text-sm">
                                             <div class="flex items-center gap-1 text-yellow-500">
                                                 <i class="fas fa-star"></i>
