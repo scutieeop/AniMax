@@ -1714,100 +1714,98 @@
         const videoOverlay = document.getElementById('videoOverlay');
         const videoControls = document.querySelector('.video-controls');
         const playPauseBtn = document.getElementById('playPauseBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const pipBtn = document.getElementById('pipBtn');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
+        const progressBar = document.getElementById('progressBar');
         const volumeBtn = document.getElementById('volumeBtn');
         const volumeSlider = document.getElementById('volumeSlider');
-        const pipBtn = document.getElementById('pipBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const progressBar = document.querySelector('.progress-bar');
-        const progress = document.querySelector('.progress');
-        const timeDisplay = document.getElementById('timeDisplay');
-        const timeTooltip = document.getElementById('timeTooltip');
 
-        let controlsTimeout;
-
-        // Video kontrolleri göster/gizle
-        videoWrapper.addEventListener('mousemove', () => {
-            videoControls.style.opacity = '1';
-            clearTimeout(controlsTimeout);
-            controlsTimeout = setTimeout(() => {
-                if (!videoPlayer.paused) {
-                    videoControls.style.opacity = '0';
-                }
-            }, 3000);
-        });
-
-        videoWrapper.addEventListener('mouseleave', () => {
-            if (!videoPlayer.paused) {
-                videoControls.style.opacity = '0';
-            }
+        // Video yüklendiğinde
+        videoPlayer.addEventListener('loadedmetadata', () => {
+            durationDisplay.textContent = formatTime(videoPlayer.duration);
+            videoPlayer.volume = volumeSlider.value;
         });
 
         // Oynat/Duraklat
-        function togglePlay() {
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        videoPlayer.addEventListener('click', togglePlayPause);
+
+        function togglePlayPause() {
             if (videoPlayer.paused) {
                 videoPlayer.play();
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 videoOverlay.style.display = 'none';
             } else {
                 videoPlayer.pause();
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 videoOverlay.style.display = 'flex';
             }
+            updatePlayPauseIcon();
         }
 
-        videoOverlay.addEventListener('click', togglePlay);
-        playPauseBtn.addEventListener('click', togglePlay);
-        videoPlayer.addEventListener('click', togglePlay);
-
-        // Ses kontrolü
-        volumeBtn.addEventListener('click', () => {
-            videoPlayer.muted = !videoPlayer.muted;
-            updateVolumeIcon();
-        });
-
-        volumeSlider.addEventListener('input', (e) => {
-            videoPlayer.volume = e.target.value / 100;
-            updateVolumeIcon();
-        });
-
-        function updateVolumeIcon() {
-            const icon = volumeBtn.querySelector('i');
-            if (videoPlayer.muted || videoPlayer.volume === 0) {
-                icon.className = 'fas fa-volume-mute';
-            } else if (videoPlayer.volume < 0.5) {
-                icon.className = 'fas fa-volume-down';
+        function updatePlayPauseIcon() {
+            const icon = playPauseBtn.querySelector('i');
+            if (videoPlayer.paused) {
+                icon.classList.remove('fa-pause');
+                icon.classList.add('fa-play');
             } else {
-                icon.className = 'fas fa-volume-up';
+                icon.classList.remove('fa-play');
+                icon.classList.add('fa-pause');
             }
         }
 
         // İlerleme çubuğu
         videoPlayer.addEventListener('timeupdate', () => {
-            const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
-            progress.style.width = `${percent}%`;
-            timeDisplay.textContent = `${formatTime(videoPlayer.currentTime)} / ${formatTime(videoPlayer.duration)}`;
+            const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            progressBar.value = progress;
+            currentTimeDisplay.textContent = formatTime(videoPlayer.currentTime);
         });
 
-        progressBar.addEventListener('click', (e) => {
-            const rect = progressBar.getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            videoPlayer.currentTime = pos * videoPlayer.duration;
+        progressBar.addEventListener('input', () => {
+            const time = (progressBar.value / 100) * videoPlayer.duration;
+            videoPlayer.currentTime = time;
         });
 
-        progressBar.addEventListener('mousemove', (e) => {
-            const rect = progressBar.getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            const time = pos * videoPlayer.duration;
-            timeTooltip.textContent = formatTime(time);
-            timeTooltip.style.left = `${e.clientX - rect.left}px`;
-            timeTooltip.style.display = 'block';
+        // Ses kontrolü
+        volumeSlider.addEventListener('input', () => {
+            videoPlayer.volume = volumeSlider.value;
+            updateVolumeIcon();
         });
 
-        progressBar.addEventListener('mouseleave', () => {
-            timeTooltip.style.display = 'none';
+        volumeBtn.addEventListener('click', () => {
+            videoPlayer.muted = !videoPlayer.muted;
+            updateVolumeIcon();
         });
 
-        // Video oynatıcı kontrolleri
+        function updateVolumeIcon() {
+            const icon = volumeBtn.querySelector('i');
+            icon.classList.remove('fa-volume-up', 'fa-volume-down', 'fa-volume-off', 'fa-volume-mute');
+            
+            if (videoPlayer.muted || videoPlayer.volume === 0) {
+                icon.classList.add('fa-volume-mute');
+            } else if (videoPlayer.volume < 0.33) {
+                icon.classList.add('fa-volume-off');
+            } else if (videoPlayer.volume < 0.67) {
+                icon.classList.add('fa-volume-down');
+            } else {
+                icon.classList.add('fa-volume-up');
+            }
+        }
+
+        // PiP modu
+        pipBtn.addEventListener('click', async () => {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await videoPlayer.requestPictureInPicture();
+                }
+            } catch (error) {
+                console.error('PiP hatası:', error);
+            }
+        });
+
+        // Tam ekran
         fullscreenBtn.addEventListener('click', toggleFullscreen);
 
         function toggleFullscreen() {
@@ -1824,6 +1822,13 @@
                     document.webkitExitFullscreen();
                 }
             }
+        }
+
+        // Zaman formatı
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            seconds = Math.floor(seconds % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
         // Ekran yönü değiştiğinde
@@ -1906,7 +1911,7 @@
     }
     </script>
 
-    <!-- Mobil Menü Script Güncellemeleri -->
+    <!-- Mobil Menü Script -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const menuButton = document.getElementById('menuButton');
@@ -2106,15 +2111,6 @@
                 }
             }
         }
-
-        // Ekran yönü değiştiğinde
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
-                if (window.orientation === 90 || window.orientation === -90) {
-                    toggleFullscreen();
-                }
-            }, 100);
-        });
     });
     </script>
 
