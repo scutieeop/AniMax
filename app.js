@@ -5,10 +5,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const passport = require('./config/passport');
 const path = require('path');
-const cron = require('node-cron');
-
-// Migrasyon işlemi
-let isMigrationRunning = false;
+const { startMigration } = require('./utils/migration');
 
 const app = express();
 
@@ -33,7 +30,11 @@ app.use(passport.session());
 
 // MongoDB Bağlantısı
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB bağlantısı başarılı'))
+    .then(() => {
+        console.log('MongoDB bağlantısı başarılı');
+        // MongoDB bağlantısı başarılı olduktan sonra migrasyonu başlat
+        startMigration();
+    })
     .catch(err => console.error('MongoDB bağlantı hatası:', err));
 
 // Middleware
@@ -59,79 +60,10 @@ const Anime = require('./models/Anime');
 const Comment = require('./models/Comment');
 const Episode = require('./models/Episode');
 
-// Migrasyon fonksiyonu
-async function migrateSeasons() {
-    if (isMigrationRunning) {
-        console.log('Migrasyon zaten çalışıyor, bu işlem atlanıyor...');
-        return;
-    }
-
-    try {
-        isMigrationRunning = true;
-        console.log('Migrasyon başlatılıyor...');
-
-        const animes = await Anime.find({}).lean();
-        let updatedCount = 0;
-
-        for (const anime of animes) {
-            try {
-                // Eğer episodes varsa ama seasons boşsa
-                if (anime.episodes && anime.episodes.length > 0 && (!anime.seasons || anime.seasons.length === 0)) {
-                    // Bölümleri sezonlara göre grupla
-                    const seasonMap = new Map();
-                    
-                    anime.episodes.forEach(episode => {
-                        if (!seasonMap.has(episode.season)) {
-                            seasonMap.set(episode.season, []);
-                        }
-                        seasonMap.get(episode.season).push({
-                            episodeNumber: episode.episodeNumber,
-                            title: episode.title || `Bölüm ${episode.episodeNumber}`,
-                            videoUrl: episode.videoUrl,
-                            thumbnail: episode.thumbnail || '',
-                            duration: episode.duration || 0
-                        });
-                    });
-
-                    // Sezonları oluştur
-                    const seasons = Array.from(seasonMap.entries()).map(([seasonNumber, episodes]) => ({
-                        seasonNumber: parseInt(seasonNumber),
-                        title: `Sezon ${seasonNumber}`,
-                        episodes: episodes.sort((a, b) => a.episodeNumber - b.episodeNumber)
-                    }));
-
-                    // Anime'yi güncelle
-                    await Anime.findByIdAndUpdate(anime._id, {
-                        $set: {
-                            seasons: seasons,
-                            totalEpisodes: anime.episodes.length
-                        }
-                    });
-
-                    updatedCount++;
-                    console.log(`${anime.name} için sezonlar güncellendi.`);
-                }
-            } catch (error) {
-                console.error(`${anime.name} güncellenirken hata:`, error);
-            }
-        }
-
-        console.log(`Migrasyon tamamlandı. ${updatedCount} anime güncellendi.`);
-    } catch (error) {
-        console.error('Migrasyon sırasında hata:', error);
-    } finally {
-        isMigrationRunning = false;
-    }
-}
-
-// İlk çalıştırmada ve her 10 dakikada bir migrasyon yap
-migrateSeasons();
-cron.schedule('*/10 * * * *', migrateSeasons);
-
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
-app.use('/comments', require('./routes/comments'));
+app.use('/api/comments', require('./routes/comments'));
 app.use('/profile', require('./routes/profile'));
 app.use('/video', require('./routes/video'));
 app.use('/admin', require('./routes/admin'));

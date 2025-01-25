@@ -1652,51 +1652,49 @@
             <div class="space-y-6">
                 <% if (comments && comments.length > 0) { %>
                     <% comments.forEach(comment => { %>
-                        <% if (!comment.isDeleted) { %>
-                            <div class="bg-[#13141f] rounded-lg p-6">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div class="flex items-center gap-3">
-                                        <img src="<%= comment.user.avatarUrl || comment.user.avatar %>" 
-                                            alt="<%= comment.user.username %>" 
-                                            class="w-10 h-10 rounded-full">
-                                        <div>
-                                            <h4 class="font-bold"><%= comment.user.username %></h4>
-                                            <div class="flex items-center gap-2 text-sm text-gray-400">
-                                                <span><%= comment.rating %>/5</span>
-                                                <span>•</span>
-                                                <span><%= new Date(comment.createdAt).toLocaleDateString('tr-TR') %></span>
-                                            </div>
+                        <div class="bg-[#13141f] rounded-lg p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="<%= comment.user.discordAvatar || comment.user.avatar || '/images/default-avatar.png' %>" 
+                                        alt="<%= comment.user.username %>" 
+                                        class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <h4 class="font-bold"><%= comment.user.username %></h4>
+                                        <div class="flex items-center gap-2 text-sm text-gray-400">
+                                            <span><%= comment.rating %>/5</span>
+                                            <span>•</span>
+                                            <span><%= new Date(comment.createdAt).toLocaleDateString('tr-TR') %></span>
                                         </div>
                                     </div>
-                                    
-                                    <% if (user && comment.canDelete(user)) { %>
-                                        <form action="/api/comments/delete/<%= comment._id %>" method="POST" class="ml-4">
-                                            <button type="submit" class="text-red-400 hover:text-red-500">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    <% } %>
                                 </div>
                                 
-                                <p class="text-gray-300"><%= comment.content %></p>
-                                
-                                <% if (user) { %>
-                                    <div class="mt-4 flex items-center gap-2">
-                                        <button onclick="likeComment('<%= comment._id %>')" 
-                                            class="flex items-center gap-1 text-sm text-gray-400 hover:text-blue-400"
-                                            id="like-btn-<%= comment._id %>">
+                                <% if (user && comment.canDelete(user)) { %>
+                                    <form action="/api/comments/delete/<%= comment._id %>" method="POST" class="ml-4">
+                                        <button type="submit" class="text-red-400 hover:text-red-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
-                                            <span id="like-count-<%= comment._id %>"><%= comment.likes.length %></span>
                                         </button>
-                                    </div>
+                                    </form>
                                 <% } %>
                             </div>
-                        <% } %>
-                    <% }) %>
+                            
+                            <p class="text-gray-300"><%= comment.content %></p>
+                            
+                            <% if (user) { %>
+                                <div class="mt-4 flex items-center gap-2">
+                                    <button onclick="likeComment('<%= comment._id %>')" 
+                                        class="flex items-center gap-1 text-sm text-gray-400 hover:text-blue-400"
+                                        id="like-btn-<%= comment._id %>">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                        </svg>
+                                        <span id="like-count-<%= comment._id %>"><%= comment.likes.length %></span>
+                                    </button>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% }); %>
                 <% } else { %>
                     <div class="bg-[#13141f] rounded-lg p-6 text-center text-gray-400">
                         Henüz yorum yapılmamış. İlk yorumu siz yapın!

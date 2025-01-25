@@ -3,6 +3,7 @@ const router = express.Router();
 const Anime = require('../models/Anime');
 const Comment = require('../models/Comment');
 const { isAuthenticated } = require('../middleware/auth');
+const User = require('../models/User');
 
 // Ana sayfa
 router.get('/', async (req, res) => {
@@ -31,15 +32,7 @@ router.get('/', async (req, res) => {
 // Anime detay sayfası
 router.get('/anime/:id', async (req, res) => {
     try {
-        const anime = await Anime.findById(req.params.id)
-            .populate({
-                path: 'seasons',
-                populate: {
-                    path: 'episodes',
-                    model: 'Episode'
-                }
-            });
-
+        const anime = await Anime.findById(req.params.id);
         if (!anime) {
             return res.status(404).render('error', { message: 'Anime bulunamadı' });
         }
@@ -48,13 +41,21 @@ router.get('/anime/:id', async (req, res) => {
         anime.viewCount = (anime.viewCount || 0) + 1;
         await anime.save();
 
-        // Yorumları getir
+        // Yorumları getir ve kullanıcı bilgilerini populate et
         const comments = await Comment.find({ 
             anime: anime._id,
-            isDeleted: { $ne: true }
-        })
-        .populate('user')
-        .sort({ createdAt: -1 });
+            isDeleted: false 
+        }).populate({
+            path: 'user',
+            select: 'username avatar discordAvatar roles'
+        }).sort('-createdAt');
+
+        // Kullanıcının favorilerini kontrol et
+        let isFavorite = false;
+        if (req.user) {
+            const userWithFavorites = await User.findById(req.user._id).select('favorites');
+            isFavorite = userWithFavorites.favorites.includes(anime._id);
+        }
 
         // Ortalama puanı hesapla
         const ratings = comments.map(comment => comment.rating);
@@ -69,15 +70,15 @@ router.get('/anime/:id', async (req, res) => {
         })
         .limit(5);
 
-        res.render('anime-detail', {
+        res.render('anime-detail', { 
             anime,
             comments,
             averageRating,
             similarAnimes,
-            user: req.user
+            isFavorite
         });
     } catch (error) {
-        console.error('Anime detay sayfası yüklenirken hata:', error);
+        console.error('Anime detay sayfası hatası:', error);
         res.status(500).render('error', { message: 'Bir hata oluştu' });
     }
 });

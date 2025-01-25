@@ -67,7 +67,11 @@ router.post('/delete/:id', isAuthenticated, async (req, res) => {
         }
 
         // Yorumu silindi olarak işaretle
-        await Comment.findByIdAndUpdate(comment._id, { isDeleted: true });
+        await Comment.findByIdAndUpdate(comment._id, { 
+            isDeleted: true,
+            deletedBy: req.user._id,
+            deletedAt: new Date()
+        });
         
         req.flash('success', 'Yorum başarıyla silindi');
         res.redirect('back');
