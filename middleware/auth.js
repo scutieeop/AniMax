@@ -2,7 +2,8 @@ const isAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
     }
-    res.redirect('/auth/discord');
+    req.flash('error', 'Bu sayfayı görüntülemek için giriş yapmalısınız');
+    res.redirect('/auth/login');
 };
 
 const isNotBanned = (req, res, next) => {
@@ -15,12 +16,11 @@ const isNotBanned = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-    if (req.user && (req.user.isAdmin || req.user.isFounder)) {
+    if (req.isAuthenticated() && req.user.roles.includes('admin')) {
         return next();
     }
-    res.status(403).render('error', { 
-        message: 'Bu işlem için admin yetkisine sahip olmanız gerekiyor.' 
-    });
+    req.flash('error', 'Bu sayfaya erişim yetkiniz yok');
+    res.redirect('/');
 };
 
 const isGuide = (req, res, next) => {
@@ -41,10 +41,19 @@ const isUploader = (req, res, next) => {
     });
 };
 
+const isFounder = (req, res, next) => {
+    if (req.isAuthenticated() && req.user.roles.includes('founder')) {
+        return next();
+    }
+    req.flash('error', 'Bu sayfaya erişim yetkiniz yok');
+    res.redirect('/');
+};
+
 module.exports = {
     isAuthenticated,
     isNotBanned,
     isAdmin,
     isGuide,
-    isUploader
+    isUploader,
+    isFounder
 }; 

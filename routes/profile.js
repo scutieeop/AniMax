@@ -82,4 +82,64 @@ router.post('/favorites/:animeId', isAuthenticated, async (req, res) => {
     }
 });
 
+// Profil sayfası
+router.get('/:username', async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.params.username });
+        
+        if (!user) {
+            req.flash('error', 'Kullanıcı bulunamadı');
+            return res.redirect('/');
+        }
+
+        res.render('profile', { profileUser: user });
+    } catch (error) {
+        console.error('Profil sayfası yüklenirken hata:', error);
+        req.flash('error', 'Bir hata oluştu');
+        res.redirect('/');
+    }
+});
+
+// Profil düzenleme sayfası
+router.get('/:username/edit', isAuthenticated, async (req, res) => {
+    try {
+        // Sadece kendi profilini düzenleyebilir
+        if (req.params.username !== req.user.username) {
+            req.flash('error', 'Başka bir kullanıcının profilini düzenleyemezsiniz');
+            return res.redirect('/');
+        }
+
+        res.render('profile-edit', { user: req.user });
+    } catch (error) {
+        console.error('Profil düzenleme sayfası yüklenirken hata:', error);
+        req.flash('error', 'Bir hata oluştu');
+        res.redirect('/');
+    }
+});
+
+// Profil güncelleme
+router.post('/:username/update', isAuthenticated, async (req, res) => {
+    try {
+        // Sadece kendi profilini güncelleyebilir
+        if (req.params.username !== req.user.username) {
+            req.flash('error', 'Başka bir kullanıcının profilini güncelleyemezsiniz');
+            return res.redirect('/');
+        }
+
+        const { email, avatar } = req.body;
+        
+        await User.findByIdAndUpdate(req.user._id, {
+            email,
+            avatar
+        });
+
+        req.flash('success', 'Profiliniz güncellendi');
+        res.redirect(`/profile/${req.user.username}`);
+    } catch (error) {
+        console.error('Profil güncellenirken hata:', error);
+        req.flash('error', 'Profil güncellenirken bir hata oluştu');
+        res.redirect('back');
+    }
+});
+
 module.exports = router; 

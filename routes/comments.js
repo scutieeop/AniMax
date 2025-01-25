@@ -4,56 +4,49 @@ const Comment = require('../models/Comment');
 const { isAuthenticated, isNotBanned } = require('../middleware/auth');
 
 // Yorum ekle
-router.post('/', isAuthenticated, async (req, res) => {
+router.post('/add', isAuthenticated, async (req, res) => {
     try {
-        const { content, animeId } = req.body;
-
-        // Boş yorum kontrolü
-        if (!content || content.trim().length === 0) {
-            return res.status(400).json({ error: 'Yorum boş olamaz' });
-        }
-
-        const comment = new Comment({
+        const { animeId, content, rating } = req.body;
+        
+        const comment = await Comment.create({
             user: req.user._id,
             anime: animeId,
-            content: content.trim()
+            content,
+            rating: parseInt(rating)
         });
 
-        await comment.save();
-        
-        // Yorumu kullanıcı bilgileriyle birlikte getir
-        const populatedComment = await Comment.findById(comment._id)
-            .populate('user', 'username avatar roles');
-
-        res.redirect(`/anime/${animeId}#comments`);
+        req.flash('success', 'Yorumunuz eklendi');
+        res.redirect(`/anime/${animeId}`);
     } catch (error) {
-        console.error('Yorum ekleme hatası:', error);
-        res.status(500).json({ error: 'Yorum eklenirken bir hata oluştu' });
+        console.error('Yorum eklenirken hata:', error);
+        req.flash('error', 'Yorum eklenirken bir hata oluştu');
+        res.redirect('back');
     }
 });
 
 // Yorum sil
-router.delete('/:commentId', isAuthenticated, async (req, res) => {
+router.post('/delete/:id', isAuthenticated, async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.commentId)
-            .populate('user', 'username');
-
+        const comment = await Comment.findById(req.params.id);
+        
         if (!comment) {
-            return res.status(404).json({ error: 'Yorum bulunamadı' });
+            req.flash('error', 'Yorum bulunamadı');
+            return res.redirect('back');
         }
 
-        // Yetki kontrolü
-        if (comment.user._id.toString() !== req.user.id && 
-            !req.user.roles.includes('admin') && 
-            !req.user.roles.includes('founder')) {
-            return res.status(403).json({ error: 'Bu yorumu silme yetkiniz yok' });
+        if (comment.user.toString() !== req.user._id.toString() && !req.user.roles.includes('admin')) {
+            req.flash('error', 'Bu yorumu silme yetkiniz yok');
+            return res.redirect('back');
         }
 
-        await comment.deleteOne();
-        res.json({ success: true });
+        await Comment.findByIdAndUpdate(comment._id, { isDeleted: true });
+        
+        req.flash('success', 'Yorum silindi');
+        res.redirect('back');
     } catch (error) {
-        console.error('Yorum silme hatası:', error);
-        res.status(500).json({ error: 'Yorum silinirken bir hata oluştu' });
+        console.error('Yorum silinirken hata:', error);
+        req.flash('error', 'Yorum silinirken bir hata oluştu');
+        res.redirect('back');
     }
 });
 

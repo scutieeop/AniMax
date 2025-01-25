@@ -6,10 +6,8 @@ const MongoStore = require('connect-mongo');
 const passport = require('./config/passport');
 const path = require('path');
 const cron = require('node-cron');
-const { exec } = require('child_process');
-const redis = require('redis');
 
-// Redis yerine basit bir kilit mekanizması
+// Migrasyon için basit kilitleme mekanizması
 let isMigrationRunning = false;
 
 const app = express();
@@ -44,58 +42,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Flash mesajları için middleware
+app.use(require('connect-flash')());
+
 // Kullanıcı bilgilerini ve path'i tüm şablonlara gönder
 app.use((req, res, next) => {
     res.locals.user = req.user;
     res.locals.path = req.path;
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
     next();
-});
-
-// Anime detay sayfası için özel middleware
-app.get('/anime/:id', async (req, res) => {
-    try {
-        const anime = await Anime.findById(req.params.id);
-
-        if (!anime) {
-            return res.status(404).render('error', { message: 'Anime bulunamadı' });
-        }
-
-        // Görüntülenme sayısını artır
-        anime.viewCount = (anime.viewCount || 0) + 1;
-        await anime.save();
-
-        // Yorumları getir
-        const comments = await Comment.find({ 
-            anime: anime._id,
-            isDeleted: { $ne: true }
-        })
-        .populate('user')
-        .sort({ createdAt: -1 });
-
-        // Ortalama puanı hesapla
-        const ratings = comments.map(comment => comment.rating);
-        const averageRating = ratings.length > 0 
-            ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
-            : '0.0';
-
-        // Benzer animeleri getir
-        const similarAnimes = await Anime.find({
-            _id: { $ne: anime._id },
-            genres: { $in: anime.genres }
-        })
-        .limit(5);
-
-        res.render('anime-detail', {
-            anime,
-            comments,
-            averageRating,
-            similarAnimes,
-            user: req.user
-        });
-    } catch (error) {
-        console.error('Anime detay sayfası yüklenirken hata:', error);
-        res.status(500).render('error', { message: 'Bir hata oluştu' });
-    }
 });
 
 // Model tanımlamaları
@@ -103,26 +59,24 @@ const Anime = require('./models/Anime');
 const Comment = require('./models/Comment');
 const Episode = require('./models/Episode');
 
+// Migrasyon fonksiyonu
 async function migrateSeasons() {
     if (isMigrationRunning) {
-        console.log('Migrasyon zaten çalışıyor, bu işlem atlanıyor...');
+        console.log('Başka bir migrasyon zaten çalışıyor, bu migrasyon atlanıyor...');
         return;
     }
 
     try {
         isMigrationRunning = true;
         console.log('Migrasyon başlatılıyor...');
-        
+
         const animes = await Anime.find({}).lean();
-        console.log(`Toplam ${animes.length} anime bulundu.`);
-        
         let updatedCount = 0;
-        
+
         for (const anime of animes) {
             try {
                 // Her anime için sezon yapısını kontrol et ve güncelle
-                const seasons = anime.seasons || [];
-                const updatedSeasons = seasons.map(season => {
+                const updatedSeasons = anime.seasons.map(season => {
                     if (!season.episodes) {
                         return {
                             ...season,
@@ -132,26 +86,21 @@ async function migrateSeasons() {
                     return season;
                 });
 
-                // Anime'yi güncelle
-                await Anime.findByIdAndUpdate(anime._id, { 
-                    $set: { seasons: updatedSeasons } 
-                });
-                
-                updatedCount++;
-                console.log(`İşlenen anime: ${updatedCount}/${animes.length}`);
-                
-            } catch (err) {
-                console.error(`Anime güncellenirken hata: ${anime.name}`, err);
+                // Değişiklik varsa güncelle
+                if (JSON.stringify(anime.seasons) !== JSON.stringify(updatedSeasons)) {
+                    await Anime.findByIdAndUpdate(anime._id, { seasons: updatedSeasons });
+                    updatedCount++;
+                }
+            } catch (error) {
+                console.error(`${anime.name} için migrasyon hatası:`, error);
             }
         }
-        
-        console.log(`Migrasyon tamamlandı! ${updatedCount} anime güncellendi.`);
-        
+
+        console.log(`Migrasyon tamamlandı. ${updatedCount} anime güncellendi.`);
     } catch (error) {
         console.error('Migrasyon sırasında hata:', error);
     } finally {
         isMigrationRunning = false;
-        console.log('Bir sonraki migrasyon için bekleniyor...');
     }
 }
 
@@ -162,12 +111,13 @@ cron.schedule('*/10 * * * *', () => {
     migrateSeasons();
 });
 
-// Rotalar
+// Routes
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
 app.use('/comments', require('./routes/comments'));
 app.use('/profile', require('./routes/profile'));
 app.use('/video', require('./routes/video'));
+app.use('/admin', require('./routes/admin'));
 
 // DevTools engelleme sayfası
 app.get('/devtools-blocked', (req, res) => {
@@ -185,16 +135,8 @@ app.use((req, res) => {
     });
 });
 
-// Hata yakalama
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).render('error', { 
-        message: 'Bir hata oluştu',
-        path: req.path 
-    });
-});
-
+// Port dinleme
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server ${PORT} portunda çalışıyor`);
+    console.log(`Sunucu ${PORT} portunda çalışıyor`);
 }); 

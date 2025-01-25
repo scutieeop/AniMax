@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Yönetimi - AniMax</title>
+    <link rel="stylesheet" href="/css/tailwind.css">
+</head>
+<body class="bg-[#1a1b26] text-white min-h-screen">
+    <%- include('../partials/header') %>
+    
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Kullanıcı Yönetimi</h1>
+        
+        <div class="bg-[#13141f] rounded-lg shadow-lg p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="py-3 px-4 text-left">Kullanıcı</th>
+                            <th class="py-3 px-4 text-left">Discord ID</th>
+                            <th class="py-3 px-4 text-left">E-posta</th>
+                            <th class="py-3 px-4 text-left">Roller</th>
+                            <th class="py-3 px-4 text-left">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user => { %>
+                            <tr class="border-b border-gray-700 hover:bg-gray-800/50">
+                                <td class="py-4 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="<%= user.avatarUrl %>" alt="<%= user.username %>" class="w-8 h-8 rounded-full">
+                                        <span><%= user.username %></span>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4"><%= user.discordId %></td>
+                                <td class="py-4 px-4"><%= user.email %></td>
+                                <td class="py-4 px-4">
+                                    <div class="flex flex-wrap gap-2">
+                                        <% user.roles.forEach(role => { %>
+                                            <span class="px-2 py-1 rounded text-sm
+                                                <%= role === 'admin' ? 'bg-blue-500/20 text-blue-400' : 
+                                                    role === 'founder' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-gray-500/20 text-gray-400' %>">
+                                                <%= role %>
+                                            </span>
+                                        <% }) %>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4">
+                                    <button onclick="openRoleModal('<%= user._id %>', '<%= user.username %>')" 
+                                            class="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-sm">
+                                        Rolleri Düzenle
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rol Düzenleme Modal -->
+    <div id="roleModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+        <div class="bg-[#13141f] rounded-lg p-6 w-full max-w-md">
+            <h2 class="text-xl font-bold mb-4">Rolleri Düzenle</h2>
+            <p id="modalUsername" class="mb-4 text-gray-400"></p>
+            
+            <form id="roleForm" action="/admin/users/update-roles" method="POST">
+                <input type="hidden" name="userId" id="modalUserId">
+                
+                <div class="space-y-3 mb-6">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="roles[]" value="admin" class="w-4 h-4">
+                        <span>Admin</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="roles[]" value="founder" class="w-4 h-4">
+                        <span>Kurucu</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="roles[]" value="user" class="w-4 h-4" checked disabled>
+                        <span>Kullanıcı</span>
+                    </label>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeRoleModal()" 
+                            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">
+                        İptal
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded">
+                        Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openRoleModal(userId, username) {
+            document.getElementById('roleModal').classList.remove('hidden');
+            document.getElementById('roleModal').classList.add('flex');
+            document.getElementById('modalUserId').value = userId;
+            document.getElementById('modalUsername').textContent = username + ' kullanıcısının rolleri';
+            
+            // Mevcut rolleri işaretle
+            const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+            const roles = Array.from(row.querySelectorAll('.role-badge')).map(badge => badge.dataset.role);
+            
+            document.querySelectorAll('#roleForm input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = roles.includes(checkbox.value) || checkbox.value === 'user';
+            });
+        }
+
+        function closeRoleModal() {
+            document.getElementById('roleModal').classList.add('hidden');
+            document.getElementById('roleModal').classList.remove('flex');
+        }
+    </script>
+</body>
+</html> 
