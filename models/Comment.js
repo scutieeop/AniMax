@@ -13,14 +13,14 @@ const commentSchema = new mongoose.Schema({
     },
     content: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     rating: {
         type: Number,
-        required: false,
         min: 1,
-        max: 10,
-        default: 5
+        max: 5,
+        required: true
     },
     isSpoiler: {
         type: Boolean,
@@ -52,5 +52,14 @@ commentSchema.pre('save', function(next) {
     this.updatedAt = new Date();
     next();
 });
+
+// Yorumu silen kullanıcının yetkisi var mı kontrol et
+commentSchema.methods.canDelete = function(user) {
+    return user && (
+        user._id.equals(this.user) || // Yorumun sahibi
+        user.roles.includes('admin') || // Admin
+        user.roles.includes('founder') // Kurucu
+    );
+};
 
 module.exports = mongoose.model('Comment', commentSchema); 

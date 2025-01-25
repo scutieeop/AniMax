@@ -4,19 +4,45 @@ const Comment = require('../models/Comment');
 const { isAuthenticated, isNotBanned } = require('../middleware/auth');
 
 // Yorum ekle
-router.post('/add', isAuthenticated, async (req, res) => {
+router.post('/add', isAuthenticated, isNotBanned, async (req, res) => {
     try {
         const { animeId, content, rating } = req.body;
-        
+
+        // Boş yorum kontrolü
+        if (!content || content.trim().length === 0) {
+            req.flash('error', 'Yorum boş olamaz');
+            return res.redirect('back');
+        }
+
+        // Rating kontrolü
+        const ratingNum = parseInt(rating);
+        if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+            req.flash('error', 'Geçerli bir puan vermelisiniz (1-5)');
+            return res.redirect('back');
+        }
+
+        // Kullanıcının daha önce yorum yapıp yapmadığını kontrol et
+        const existingComment = await Comment.findOne({
+            user: req.user._id,
+            anime: animeId,
+            isDeleted: false
+        });
+
+        if (existingComment) {
+            req.flash('error', 'Bu anime için zaten bir yorum yapmışsınız');
+            return res.redirect('back');
+        }
+
+        // Yeni yorum oluştur
         const comment = await Comment.create({
             user: req.user._id,
             anime: animeId,
-            content,
-            rating: parseInt(rating)
+            content: content.trim(),
+            rating: ratingNum
         });
 
-        req.flash('success', 'Yorumunuz eklendi');
-        res.redirect(`/anime/${animeId}`);
+        req.flash('success', 'Yorumunuz başarıyla eklendi');
+        res.redirect('back');
     } catch (error) {
         console.error('Yorum eklenirken hata:', error);
         req.flash('error', 'Yorum eklenirken bir hata oluştu');
@@ -34,14 +60,16 @@ router.post('/delete/:id', isAuthenticated, async (req, res) => {
             return res.redirect('back');
         }
 
-        if (comment.user.toString() !== req.user._id.toString() && !req.user.roles.includes('admin')) {
+        // Silme yetkisi kontrolü
+        if (!comment.canDelete(req.user)) {
             req.flash('error', 'Bu yorumu silme yetkiniz yok');
             return res.redirect('back');
         }
 
+        // Yorumu silindi olarak işaretle
         await Comment.findByIdAndUpdate(comment._id, { isDeleted: true });
         
-        req.flash('success', 'Yorum silindi');
+        req.flash('success', 'Yorum başarıyla silindi');
         res.redirect('back');
     } catch (error) {
         console.error('Yorum silinirken hata:', error);
@@ -51,9 +79,9 @@ router.post('/delete/:id', isAuthenticated, async (req, res) => {
 });
 
 // Yorumu beğen/beğenmekten vazgeç
-router.post('/:commentId/like', isAuthenticated, isNotBanned, async (req, res) => {
+router.post('/:id/like', isAuthenticated, isNotBanned, async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.commentId);
+        const comment = await Comment.findById(req.params.id);
         
         if (!comment) {
             return res.status(404).json({ error: 'Yorum bulunamadı' });
@@ -62,8 +90,10 @@ router.post('/:commentId/like', isAuthenticated, isNotBanned, async (req, res) =
         const userIndex = comment.likes.indexOf(req.user._id);
         
         if (userIndex === -1) {
+            // Yorumu beğen
             comment.likes.push(req.user._id);
         } else {
+            // Beğeniyi kaldır
             comment.likes.splice(userIndex, 1);
         }
 
@@ -74,8 +104,9 @@ router.post('/:commentId/like', isAuthenticated, isNotBanned, async (req, res) =
             liked: userIndex === -1,
             likeCount: comment.likes.length 
         });
-    } catch (err) {
-        res.status(500).json({ error: 'İşlem sırasında bir hata oluştu' });
+    } catch (error) {
+        console.error('Beğeni işlemi sırasında hata:', error);
+        res.status(500).json({ error: 'Beğeni işlemi sırasında bir hata oluştu' });
     }
 });
 

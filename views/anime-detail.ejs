@@ -1607,84 +1607,99 @@
             
             <% if (user) { %>
                 <!-- Yorum Formu -->
-                <form action="/comments" method="POST" class="mb-8 bg-[rgba(255,255,255,0.05)] rounded-xl p-4">
-                    <input type="hidden" name="animeId" value="<%= anime._id %>">
-                    <div class="flex items-start gap-4 mb-4">
-                        <img src="<%= user.avatar %>" alt="<%= user.username %>" class="w-10 h-10 rounded-full">
-                        <div class="flex-1">
-                            <textarea name="content" rows="3" 
-                                class="w-full p-4 bg-[rgba(255,255,255,0.1)] rounded-xl border border-[rgba(255,255,255,0.1)] text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="Bu anime hakkında ne düşünüyorsun?"></textarea>
-                            <div class="flex items-center justify-end gap-4 mt-3">
-                                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
-                                    <i class="fas fa-paper-plane"></i>
-                                    Yorum Yap
-                                </button>
+                <div class="bg-[#13141f] rounded-lg p-6 mb-6">
+                    <h3 class="text-xl font-bold mb-4">Yorum Yap</h3>
+                    <form action="/comments/add" method="POST" class="space-y-4">
+                        <input type="hidden" name="animeId" value="<%= anime._id %>">
+                        
+                        <div>
+                            <label class="block text-gray-400 mb-2">Puanınız</label>
+                            <div class="flex gap-4">
+                                <% for(let i = 1; i <= 5; i++) { %>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="rating" value="<%= i %>" class="hidden peer" required>
+                                        <div class="w-8 h-8 flex items-center justify-center rounded bg-gray-800 text-gray-400 peer-checked:bg-yellow-500 peer-checked:text-white transition-colors">
+                                            <%= i %>
+                                        </div>
+                                    </label>
+                                <% } %>
                             </div>
                         </div>
-                    </div>
-                </form>
+                        
+                        <div>
+                            <label class="block text-gray-400 mb-2">Yorumunuz</label>
+                            <textarea name="content" rows="4" 
+                                class="w-full bg-gray-800 rounded p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="Bu anime hakkında ne düşünüyorsunuz?" 
+                                required></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button type="submit" 
+                                class="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded text-white transition-colors">
+                                Yorum Yap
+                            </button>
+                        </div>
+                    </form>
+                </div>
             <% } else { %>
-                <div class="text-center py-8 bg-[rgba(255,255,255,0.05)] rounded-xl mb-8">
-                    <i class="fas fa-comment-slash text-4xl text-gray-400 mb-4"></i>
-                    <p class="text-gray-300 mb-4">Yorum yapmak için giriş yapmalısın</p>
-                    <a href="/auth/discord" class="inline-flex items-center gap-2 px-6 py-3 bg-[#5865F2] text-white rounded-xl hover:bg-[#4752C4] transition-colors">
-                        <i class="fab fa-discord"></i>
-                        Discord ile Giriş Yap
-                    </a>
+                <div class="bg-[#13141f] rounded-lg p-6 mb-6 text-center">
+                    <p class="text-gray-400">Yorum yapmak için <a href="/auth/login" class="text-blue-400 hover:underline">giriş yapın</a></p>
                 </div>
             <% } %>
 
             <!-- Yorumlar Listesi -->
-            <div id="comments-list" class="space-y-4">
+            <div class="space-y-6">
                 <% if (comments && comments.length > 0) { %>
                     <% comments.forEach(comment => { %>
-                        <div class="comment bg-[rgba(255,255,255,0.05)] rounded-xl p-4 hover:bg-[rgba(255,255,255,0.08)] transition-colors"
-                             data-comment-id="<%= comment._id %>">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-start gap-3">
-                                    <img src="<%= comment.user.avatar %>" alt="<%= comment.user.username %>" 
-                                        class="w-10 h-10 rounded-full">
-                                    <div>
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <h3 class="font-semibold"><%= comment.user.username %></h3>
-                                            <% if (comment.user.roles.includes('founder')) { %>
-                                                <span class="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-xs rounded-full border border-yellow-500/30">
-                                                    <i class="fas fa-crown mr-1"></i>Kurucu
-                                                </span>
-                                            <% } else if (comment.user.roles.includes('admin')) { %>
-                                                <span class="px-2 py-0.5 bg-red-500/20 text-red-500 text-xs rounded-full border border-red-500/30">
-                                                    <i class="fas fa-shield-alt mr-1"></i>Admin
-                                                </span>
-                                            <% } %>
+                        <% if (!comment.isDeleted) { %>
+                            <div class="bg-[#13141f] rounded-lg p-6">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="<%= comment.user.avatarUrl || comment.user.avatar %>" 
+                                            alt="<%= comment.user.username %>" 
+                                            class="w-10 h-10 rounded-full">
+                                        <div>
+                                            <h4 class="font-bold"><%= comment.user.username %></h4>
+                                            <div class="flex items-center gap-2 text-sm text-gray-400">
+                                                <span><%= comment.rating %>/5</span>
+                                                <span>•</span>
+                                                <span><%= new Date(comment.createdAt).toLocaleDateString('tr-TR') %></span>
+                                            </div>
                                         </div>
-                                        <span class="text-sm text-gray-400">
-                                            <%= new Date(comment.createdAt).toLocaleDateString('tr-TR', { 
-                                                year: 'numeric', 
-                                                month: 'long', 
-                                                day: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            }) %>
-                                        </span>
-                                        <p class="mt-2 text-gray-200"><%= comment.content %></p>
                                     </div>
+                                    
+                                    <% if (user && comment.canDelete(user)) { %>
+                                        <form action="/comments/delete/<%= comment._id %>" method="POST" class="ml-4">
+                                            <button type="submit" class="text-red-400 hover:text-red-500">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    <% } %>
                                 </div>
-                                <% if (user && (user.id === comment.user._id.toString() || 
-                                            user.roles.includes('admin') || 
-                                            user.roles.includes('founder'))) { %>
-                                    <button onclick="deleteComment('<%= comment._id %>')" 
-                                            class="text-gray-400 hover:text-red-500 transition-colors">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                
+                                <p class="text-gray-300"><%= comment.content %></p>
+                                
+                                <% if (user) { %>
+                                    <div class="mt-4 flex items-center gap-2">
+                                        <button onclick="likeComment('<%= comment._id %>')" 
+                                            class="flex items-center gap-1 text-sm text-gray-400 hover:text-blue-400"
+                                            id="like-btn-<%= comment._id %>">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                            </svg>
+                                            <span id="like-count-<%= comment._id %>"><%= comment.likes.length %></span>
+                                        </button>
+                                    </div>
                                 <% } %>
                             </div>
-                        </div>
-                    <% }); %>
+                        <% } %>
+                    <% }) %>
                 <% } else { %>
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-comments text-4xl mb-4"></i>
-                        <p>Henüz yorum yapılmamış. İlk yorumu sen yap!</p>
+                    <div class="bg-[#13141f] rounded-lg p-6 text-center text-gray-400">
+                        Henüz yorum yapılmamış. İlk yorumu siz yapın!
                     </div>
                 <% } %>
             </div>
@@ -1792,34 +1807,33 @@
             timeTooltip.style.display = 'none';
         });
 
-        // PiP modu
-        pipBtn.addEventListener('click', async () => {
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                } else {
-                    await videoPlayer.requestPictureInPicture();
-                }
-            } catch (error) {
-                console.error('PiP hatası:', error);
-            }
-        });
+        // Video oynatıcı kontrolleri
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
 
-        // Tam ekran
-        fullscreenBtn.addEventListener('click', () => {
+        function toggleFullscreen() {
             if (!document.fullscreenElement) {
-                videoWrapper.requestFullscreen();
+                if (videoPlayer.requestFullscreen) {
+                    videoPlayer.requestFullscreen();
+                } else if (videoPlayer.webkitRequestFullscreen) {
+                    videoPlayer.webkitRequestFullscreen();
+                }
             } else {
-                document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
             }
-        });
-
-        // Zaman formatı
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            seconds = Math.floor(seconds % 60);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
+
+        // Ekran yönü değiştiğinde
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                if (window.orientation === 90 || window.orientation === -90) {
+                    toggleFullscreen();
+                }
+            }, 100);
+        });
     });
     </script>
 
@@ -1862,34 +1876,32 @@
     </script>
 
     <script>
-    async function deleteComment(commentId) {
-        if (!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return;
-
+    async function likeComment(commentId) {
         try {
-            const response = await fetch(`/comments/${commentId}`, {
-                method: 'DELETE',
+            const response = await fetch(`/comments/${commentId}/like`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-
+            
             const data = await response.json();
             
             if (data.success) {
-                const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
-                commentElement.style.opacity = '0';
-                setTimeout(() => {
-                    commentElement.remove();
-                    if (document.querySelectorAll('#comments-list .comment').length === 0) {
-                        location.reload();
-                    }
-                }, 300);
-            } else {
-                alert(data.error || 'Yorum silinirken bir hata oluştu');
+                const likeCount = document.getElementById(`like-count-${commentId}`);
+                likeCount.textContent = data.likeCount;
+                
+                const likeBtn = document.getElementById(`like-btn-${commentId}`);
+                if (data.liked) {
+                    likeBtn.classList.add('text-blue-400');
+                    likeBtn.classList.remove('text-gray-400');
+                } else {
+                    likeBtn.classList.add('text-gray-400');
+                    likeBtn.classList.remove('text-blue-400');
+                }
             }
         } catch (error) {
-            console.error('Yorum silme hatası:', error);
-            alert('Yorum silinirken bir hata oluştu');
+            console.error('Beğeni işlemi sırasında hata:', error);
         }
     }
     </script>
