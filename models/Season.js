@@ -34,4 +34,4 @@ const seasonSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('Season', seasonSchema); 
+module.exports = mongoose.model('Season', seasonSchema);
