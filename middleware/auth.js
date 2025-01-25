@@ -16,11 +16,17 @@ const isNotBanned = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.roles.includes('admin')) {
-        return next();
+    if (!req.isAuthenticated()) {
+        req.flash('error', 'Bu sayfayı görüntülemek için giriş yapmalısınız');
+        return res.redirect('/auth/login');
     }
-    req.flash('error', 'Bu sayfaya erişim yetkiniz yok');
-    res.redirect('/');
+
+    if (!req.user.roles.includes('admin') && !req.user.roles.includes('founder')) {
+        req.flash('error', 'Bu sayfaya erişim yetkiniz yok');
+        return res.redirect('/');
+    }
+
+    next();
 };
 
 const isGuide = (req, res, next) => {

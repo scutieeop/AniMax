@@ -5,7 +5,24 @@ const { isAdmin } = require('../middleware/auth');
 
 // Admin paneli ana sayfası
 router.get('/', isAdmin, async (req, res) => {
-    res.redirect('/admin/users');
+    try {
+        // Kullanıcı istatistiklerini getir
+        const totalUsers = await User.countDocuments();
+        const adminUsers = await User.countDocuments({ roles: 'admin' });
+        const founderUsers = await User.countDocuments({ roles: 'founder' });
+
+        res.render('admin/dashboard', { 
+            stats: {
+                totalUsers,
+                adminUsers,
+                founderUsers
+            }
+        });
+    } catch (error) {
+        console.error('Admin paneli yüklenirken hata:', error);
+        req.flash('error', 'Bir hata oluştu');
+        res.redirect('/');
+    }
 });
 
 // Kullanıcı yönetimi sayfası
@@ -15,7 +32,8 @@ router.get('/users', isAdmin, async (req, res) => {
         res.render('admin/users', { users });
     } catch (error) {
         console.error('Kullanıcılar getirilirken hata:', error);
-        res.status(500).send('Bir hata oluştu');
+        req.flash('error', 'Kullanıcılar getirilirken bir hata oluştu');
+        res.redirect('/admin');
     }
 });
 
