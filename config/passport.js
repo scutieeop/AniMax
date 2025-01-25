@@ -13,6 +13,9 @@ const DISCORD_ROLES = {
     SUPPORTER: '1332379048407470180'
 };
 
+// Kurucu ID'leri
+const FOUNDER_IDS = ['1246506868977696811', '1245436966972031069', '1112945015132536943'];
+
 // Environment değişkenlerini kontrol et
 if (!process.env.DISCORD_CLIENT_ID) {
     console.error('DISCORD_CLIENT_ID bulunamadı!');
@@ -47,65 +50,63 @@ passport.use(new DiscordStrategy({
     clientSecret: process.env.DISCORD_CLIENT_SECRET,
     callbackURL: process.env.DISCORD_CALLBACK_URL,
     scope: ['identify', 'email', 'guilds.members.read'],
-    proxy: true,
-    passReqToCallback: true
-}, async (req, accessToken, refreshToken, profile, done) => {
+}, async (accessToken, refreshToken, profile, done) => {
     try {
-        // Discord API'den kullanıcı bilgilerini al
-        const userResponse = await fetch('https://discord.com/api/v10/users/@me', {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        });
-        
-        const userData = await userResponse.json();
-        console.log('Discord kullanıcı bilgileri:', userData);
-
         // Discord API'den sunucu üye bilgilerini al
-        const guildMemberResponse = await fetch(`https://discord.com/api/v10/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`, {
+        const guildMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${profile.id}`, {
             headers: {
-                Authorization: `Bearer ${accessToken}`
+                Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`
             }
         });
         
         const guildMember = await guildMemberResponse.json();
         console.log('Sunucu üye bilgileri:', guildMember);
 
-        // Kullanıcının rollerini belirle
+        // Rolleri belirle
         let userRoles = ['user'];
-        const founderIds = ['1246506868977696811', '1245436966972031069', '1112945015132536943'];
         
-        if (founderIds.includes(userData.id)) {
+        // Kurucu kontrolü
+        if (FOUNDER_IDS.includes(profile.id)) {
             userRoles.push('founder');
         }
 
-        // Admin rolünü kontrol et
-        if (guildMember && guildMember.roles && guildMember.roles.includes(DISCORD_ROLES.ADMIN)) {
+        // Admin rolü kontrolü
+        if (guildMember.roles && guildMember.roles.includes(DISCORD_ROLES.ADMIN)) {
             userRoles.push('admin');
         }
 
-        let user = await User.findOne({ discordId: userData.id });
+        // Discord avatar URL'ini oluştur
+        let avatarUrl;
+        if (profile.avatar) {
+            const format = profile.avatar.startsWith('a_') ? 'gif' : 'png';
+            avatarUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+        } else {
+            avatarUrl = `https://cdn.discordapp.com/embed/avatars/${parseInt(profile.discriminator) % 5}.png`;
+        }
+
+        let user = await User.findOne({ discordId: profile.id });
         
         if (!user) {
             console.log('Yeni kullanıcı oluşturuluyor...');
             user = await User.create({
-                discordId: userData.id,
-                username: userData.username,
-                email: userData.email,
-                discordAvatar: userData.avatar,
+                discordId: profile.id,
+                username: profile.username,
+                email: profile.email,
+                avatarUrl: avatarUrl,
                 roles: userRoles,
-                discordRoles: guildMember?.roles || []
+                discordRoles: guildMember.roles || []
             });
             console.log('Yeni kullanıcı oluşturuldu:', user.username);
         } else {
             console.log('Mevcut kullanıcı güncelleniyor:', user.username);
-            user.username = userData.username;
-            user.email = userData.email;
-            user.discordAvatar = userData.avatar;
+            user.username = profile.username;
+            user.email = profile.email;
+            user.avatarUrl = avatarUrl;
             user.roles = userRoles;
-            user.discordRoles = guildMember?.roles || [];
+            user.discordRoles = guildMember.roles || [];
             await user.save();
-            console.log('Kullanıcı güncellendi');
+            console.log('Kullanıcı güncellendi:', user.username);
+            console.log('Discord rolleri:', user.discordRoles);
         }
         
         return done(null, user);

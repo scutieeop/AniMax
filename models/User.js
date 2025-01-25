@@ -5,78 +5,43 @@ const ROLES = ['user', 'admin', 'founder', 'contributor', 'guide', 'premium', 'v
 const BADGES = ['admin', 'premium', 'vip', 'founder', 'moderator', 'supporter', 'verified'];
 
 const userSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-    },
-    password: {
-        type: String,
-        required: function() {
-            // Discord ile giriş yapanlar için password zorunlu değil
-            return !this.discordId;
-        }
-    },
     discordId: {
         type: String,
         required: true,
         unique: true
     },
-    discordAvatar: {
-        type: String
-    },
-    discordRoles: [{
-        type: String
-    }],
-    roles: [{
+    username: {
         type: String,
-        enum: ['user', 'admin', 'founder'],
-        default: ['user']
-    }],
-    badges: {
+        required: true
+    },
+    email: String,
+    avatarUrl: String,
+    roles: {
         type: [String],
-        enum: BADGES,
-        default: [],
-        validate: {
-            validator: function(badges) {
-                return badges.every(badge => BADGES.includes(badge));
-            },
-            message: 'Geçersiz rozet'
-        }
+        default: ['user']
+    },
+    discordRoles: {
+        type: [String],
+        default: []
     },
     favorites: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Anime'
     }],
-    isBanned: {
-        type: Boolean,
-        default: false
+    createdAt: {
+        type: Date,
+        default: Date.now
     },
     lastLogin: {
         type: Date,
         default: Date.now
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
-}, {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
 });
 
 // Avatar URL'sini oluşturan virtual alan
 userSchema.virtual('avatar').get(function() {
-    if (this.discordAvatar) {
-        return `https://cdn.discordapp.com/avatars/${this.discordId}/${this.discordAvatar}.png`;
+    if (this.avatarUrl) {
+        return this.avatarUrl;
     }
     return 'https://cdn.discordapp.com/embed/avatars/0.png'; // Varsayılan avatar
 });
