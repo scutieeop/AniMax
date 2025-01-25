@@ -26,21 +26,20 @@ const userSchema = new mongoose.Schema({
     },
     discordId: {
         type: String,
-        unique: true,
-        sparse: true
+        required: true,
+        unique: true
     },
-    avatarHash: String,
-    roles: {
-        type: [String],
-        enum: ROLES,
-        default: ['user'],
-        validate: {
-            validator: function(roles) {
-                return roles.every(role => ROLES.includes(role));
-            },
-            message: 'Geçersiz rol'
-        }
+    discordAvatar: {
+        type: String
     },
+    discordRoles: [{
+        type: String
+    }],
+    roles: [{
+        type: String,
+        enum: ['user', 'admin', 'founder'],
+        default: ['user']
+    }],
     badges: {
         type: [String],
         enum: BADGES,
@@ -60,6 +59,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    lastLogin: {
+        type: Date,
+        default: Date.now
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -72,8 +75,8 @@ const userSchema = new mongoose.Schema({
 
 // Avatar URL'sini oluşturan virtual alan
 userSchema.virtual('avatar').get(function() {
-    if (this.discordId && this.avatarHash) {
-        return `https://cdn.discordapp.com/avatars/${this.discordId}/${this.avatarHash}.png?size=128`;
+    if (this.discordAvatar) {
+        return `https://cdn.discordapp.com/avatars/${this.discordId}/${this.discordAvatar}.png`;
     }
     return 'https://cdn.discordapp.com/embed/avatars/0.png'; // Varsayılan avatar
 });

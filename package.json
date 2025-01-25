@@ -20,6 +20,7 @@
     "flowbite": "^2.2.1",
     "mongoose": "^8.9.5",
     "node-cron": "^3.0.3",
+    "node-fetch": "^2.7.0",
     "passport": "^0.7.0",
     "passport-discord": "^0.1.4",
     "redis": "^4.7.0",
