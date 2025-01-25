@@ -7,7 +7,7 @@ const passport = require('./config/passport');
 const path = require('path');
 const cron = require('node-cron');
 
-// Migrasyon için basit kilitleme mekanizması
+// Migrasyon işlemi
 let isMigrationRunning = false;
 
 const app = express();
@@ -62,7 +62,7 @@ const Episode = require('./models/Episode');
 // Migrasyon fonksiyonu
 async function migrateSeasons() {
     if (isMigrationRunning) {
-        console.log('Başka bir migrasyon zaten çalışıyor, bu migrasyon atlanıyor...');
+        console.log('Migrasyon zaten çalışıyor, bu işlem atlanıyor...');
         return;
     }
 
@@ -75,24 +75,44 @@ async function migrateSeasons() {
 
         for (const anime of animes) {
             try {
-                // Her anime için sezon yapısını kontrol et ve güncelle
-                const updatedSeasons = anime.seasons.map(season => {
-                    if (!season.episodes) {
-                        return {
-                            ...season,
-                            episodes: []
-                        };
-                    }
-                    return season;
-                });
+                // Eğer episodes varsa ama seasons boşsa
+                if (anime.episodes && anime.episodes.length > 0 && (!anime.seasons || anime.seasons.length === 0)) {
+                    // Bölümleri sezonlara göre grupla
+                    const seasonMap = new Map();
+                    
+                    anime.episodes.forEach(episode => {
+                        if (!seasonMap.has(episode.season)) {
+                            seasonMap.set(episode.season, []);
+                        }
+                        seasonMap.get(episode.season).push({
+                            episodeNumber: episode.episodeNumber,
+                            title: episode.title || `Bölüm ${episode.episodeNumber}`,
+                            videoUrl: episode.videoUrl,
+                            thumbnail: episode.thumbnail || '',
+                            duration: episode.duration || 0
+                        });
+                    });
 
-                // Değişiklik varsa güncelle
-                if (JSON.stringify(anime.seasons) !== JSON.stringify(updatedSeasons)) {
-                    await Anime.findByIdAndUpdate(anime._id, { seasons: updatedSeasons });
+                    // Sezonları oluştur
+                    const seasons = Array.from(seasonMap.entries()).map(([seasonNumber, episodes]) => ({
+                        seasonNumber: parseInt(seasonNumber),
+                        title: `Sezon ${seasonNumber}`,
+                        episodes: episodes.sort((a, b) => a.episodeNumber - b.episodeNumber)
+                    }));
+
+                    // Anime'yi güncelle
+                    await Anime.findByIdAndUpdate(anime._id, {
+                        $set: {
+                            seasons: seasons,
+                            totalEpisodes: anime.episodes.length
+                        }
+                    });
+
                     updatedCount++;
+                    console.log(`${anime.name} için sezonlar güncellendi.`);
                 }
             } catch (error) {
-                console.error(`${anime.name} için migrasyon hatası:`, error);
+                console.error(`${anime.name} güncellenirken hata:`, error);
             }
         }
 
@@ -106,10 +126,7 @@ async function migrateSeasons() {
 
 // İlk çalıştırmada ve her 10 dakikada bir migrasyon yap
 migrateSeasons();
-cron.schedule('*/10 * * * *', () => {
-    console.log('Zamanlanmış migrasyon başlatılıyor...');
-    migrateSeasons();
-});
+cron.schedule('*/10 * * * *', migrateSeasons);
 
 // Routes
 app.use('/', require('./routes/index'));
