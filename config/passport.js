@@ -61,15 +61,15 @@ passport.use(new DiscordStrategy({
         const userData = await userResponse.json();
         console.log('Discord kullanıcı bilgileri:', userData);
 
-        // Discord API'den sunucu üyelik bilgilerini al
-        const guildResponse = await fetch(`https://discord.com/api/v10/users/@me/guilds`, {
+        // Discord API'den sunucu üye bilgilerini al
+        const guildMemberResponse = await fetch(`https://discord.com/api/v10/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
         });
         
-        const guilds = await guildResponse.json();
-        console.log('Kullanıcının sunucuları:', guilds);
+        const guildMember = await guildMemberResponse.json();
+        console.log('Sunucu üye bilgileri:', guildMember);
 
         // Kullanıcının rollerini belirle
         let userRoles = ['user'];
@@ -77,6 +77,11 @@ passport.use(new DiscordStrategy({
         
         if (founderIds.includes(userData.id)) {
             userRoles.push('founder');
+        }
+
+        // Admin rolünü kontrol et
+        if (guildMember && guildMember.roles && guildMember.roles.includes(DISCORD_ROLES.ADMIN)) {
+            userRoles.push('admin');
         }
 
         let user = await User.findOne({ discordId: userData.id });
@@ -89,7 +94,7 @@ passport.use(new DiscordStrategy({
                 email: userData.email,
                 discordAvatar: userData.avatar,
                 roles: userRoles,
-                discordRoles: Object.values(DISCORD_ROLES) // Tüm olası rolleri ekle
+                discordRoles: guildMember?.roles || []
             });
             console.log('Yeni kullanıcı oluşturuldu:', user.username);
         } else {
@@ -98,7 +103,7 @@ passport.use(new DiscordStrategy({
             user.email = userData.email;
             user.discordAvatar = userData.avatar;
             user.roles = userRoles;
-            user.discordRoles = Object.values(DISCORD_ROLES); // Tüm olası rolleri güncelle
+            user.discordRoles = guildMember?.roles || [];
             await user.save();
             console.log('Kullanıcı güncellendi');
         }
