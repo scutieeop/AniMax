@@ -1552,55 +1552,47 @@
                             </h2>
 
                             <!-- Sezonlar ve Bölümler -->
-                            <div class="episodes-container space-y-4">
+                            <div class="space-y-4">
                                 <% if (anime.seasons && anime.seasons.length > 0) { %>
-                                    <div class="seasons-list">
-                                        <% anime.seasons.forEach(function(season) { %>
-                                            <div class="season-item bg-gray-800/50 rounded-xl overflow-hidden mb-4">
-                                                <div class="season-header cursor-pointer p-4 flex items-center justify-between" onclick="toggleSeason(this)">
-                                                    <div class="season-info">
-                                                        <h3 class="text-lg font-semibold">Sezon <%= season.seasonNumber %></h3>
-                                                        <span class="text-sm text-gray-400 episode-count"><%= season.episodes.length %> Bölüm</span>
-                                                    </div>
-                                                    <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                                                </div>
-                                                
-                                                <div class="season-episodes" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
-                                                    <div class="p-4 space-y-2">
-                                                        <% if (season.episodes && season.episodes.length > 0) { %>
-                                                            <% season.episodes.sort((a, b) => a.episodeNumber - b.episodeNumber).forEach(function(episode) { %>
-                                                                <div class="episode-item flex items-center justify-between p-2 hover:bg-gray-700/30 rounded-lg transition-colors cursor-pointer"
-                                                                    onclick="playEpisode('<%= episode.videoUrl %>', '<%= anime._id %>', '<%= season.seasonNumber %>', '<%= episode.episodeNumber %>')"
-                                                                    data-video-url="<%= episode.videoUrl %>"
-                                                                    data-anime-id="<%= anime._id %>"
-                                                                    data-season="<%= season.seasonNumber %>"
-                                                                    data-episode="<%= episode.episodeNumber %>">
-                                                                    <div class="flex items-center gap-3">
-                                                                        <div class="play-button">
-                                                                            <i class="fas fa-play text-blue-500"></i>
-                                                                        </div>
-                                                                        <div>
-                                                                            <div class="text-sm font-medium">Bölüm <%= episode.episodeNumber %></div>
-                                                                            <div class="text-xs text-gray-400">
-                                                                                <%= episode.title || `Bölüm ${episode.episodeNumber}` %>
-                                                                            </div>
-                                                                        </div>
+                                    <% anime.seasons.forEach(season => { %>
+                                        <div class="season-item bg-[#13141f] rounded-lg overflow-hidden">
+                                            <div class="season-header p-4 flex items-center justify-between cursor-pointer" onclick="toggleSeason(this)">
+                                                <h3 class="text-lg font-semibold">Sezon <%= season.seasonNumber %></h3>
+                                                <i class="fas fa-chevron-down transition-transform duration-300"></i>
+                                            </div>
+                                            
+                                            <div class="season-episodes transition-all duration-300" style="max-height: 0; overflow: hidden;">
+                                                <div class="p-4 space-y-2">
+                                                    <% if (season.episodes && season.episodes.length > 0) { %>
+                                                        <% season.episodes.forEach(ep => { %>
+                                                            <a href="?season=<%= season.seasonNumber %>&episode=<%= ep.episodeNumber %>" 
+                                                                class="flex items-center justify-between p-3 rounded-lg hover:bg-[#1a1b26] transition-colors
+                                                                <%= (currentSeason === season.seasonNumber && currentEpisode === ep.episodeNumber) ? 'bg-[#1a1b26]' : '' %>">
+                                                                <div class="flex items-center gap-4">
+                                                                    <div class="w-10 h-10 bg-gray-800 rounded flex items-center justify-center">
+                                                                        <i class="fas fa-play text-blue-500"></i>
                                                                     </div>
-                                                                    <div class="text-sm text-gray-400">
-                                                                        <%= episode.duration %>
+                                                                    <div>
+                                                                        <div class="text-sm font-medium">Bölüm <%= ep.episodeNumber %></div>
+                                                                        <div class="text-xs text-gray-400">
+                                                                            <%= ep.title || `Bölüm ${ep.episodeNumber}` %>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            <% }); %>
-                                                        <% } else { %>
-                                                            <div class="text-center py-4">
-                                                                <p class="text-gray-400">Bu sezonda henüz bölüm bulunmuyor.</p>
-                                                            </div>
-                                                        <% } %>
-                                                    </div>
+                                                                <div class="text-sm text-gray-400">
+                                                                    <%= ep.duration %>
+                                                                </div>
+                                                            </a>
+                                                        <% }); %>
+                                                    <% } else { %>
+                                                        <div class="text-center py-4">
+                                                            <p class="text-gray-400">Bu sezonda henüz bölüm bulunmuyor.</p>
+                                                        </div>
+                                                    <% } %>
                                                 </div>
                                             </div>
-                                        <% }); %>
-                                    </div>
+                                        </div>
+                                    <% }); %>
                                 <% } else { %>
                                     <div class="text-center py-8">
                                         <p class="text-gray-400">Henüz bölüm eklenmemiş.</p>
@@ -1802,112 +1794,134 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const videoPlayer = document.getElementById('videoPlayer');
-        const videoWrapper = document.getElementById('videoWrapper');
-        const videoOverlay = document.getElementById('videoOverlay');
-        const videoControls = document.querySelector('.video-controls');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const pipBtn = document.getElementById('pipBtn');
-        const currentTimeDisplay = document.getElementById('currentTime');
-        const durationDisplay = document.getElementById('duration');
-        const progressBar = document.getElementById('progressBar');
-        const volumeBtn = document.getElementById('volumeBtn');
-        const volumeSlider = document.getElementById('volumeSlider');
+    const videoControls = {
+        player: null,
+        wrapper: null,
+        overlay: null,
+        init: function() {
+            this.wrapper = document.getElementById('videoWrapper');
+            if (!this.wrapper) return;
 
-        // Video yüklendiğinde
-        videoPlayer.addEventListener('loadedmetadata', () => {
-            durationDisplay.textContent = formatTime(videoPlayer.duration);
-            videoPlayer.volume = volumeSlider.value;
-        });
+            this.player = document.getElementById('videoPlayer');
+            if (!this.player) return;
 
-        // Oynat/Duraklat
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        videoPlayer.addEventListener('click', togglePlayPause);
+            this.overlay = document.getElementById('videoOverlay');
+            const controls = document.querySelector('.video-controls');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const pipBtn = document.getElementById('pipBtn');
+            const currentTimeDisplay = document.getElementById('currentTime');
+            const durationDisplay = document.getElementById('duration');
+            const progressBar = document.getElementById('progressBar');
+            const volumeBtn = document.getElementById('volumeBtn');
+            const volumeSlider = document.getElementById('volumeSlider');
 
-        function togglePlayPause() {
-            if (videoPlayer.paused) {
-                videoPlayer.play();
-                videoOverlay.style.display = 'none';
+            // Video yüklendiğinde
+            this.player.addEventListener('loadedmetadata', () => {
+                durationDisplay.textContent = this.formatTime(this.player.duration);
+                this.player.volume = volumeSlider.value;
+            });
+
+            // Oynat/Duraklat
+            playPauseBtn.addEventListener('click', () => this.togglePlayPause());
+            this.overlay.addEventListener('click', () => this.togglePlayPause());
+
+            // İlerleme çubuğu
+            this.player.addEventListener('timeupdate', () => {
+                const progress = (this.player.currentTime / this.player.duration) * 100;
+                progressBar.value = progress;
+                currentTimeDisplay.textContent = this.formatTime(this.player.currentTime);
+            });
+
+            progressBar.addEventListener('input', () => {
+                const time = (progressBar.value / 100) * this.player.duration;
+                this.player.currentTime = time;
+            });
+
+            // Ses kontrolü
+            volumeSlider.addEventListener('input', () => {
+                this.player.volume = volumeSlider.value;
+                this.updateVolumeIcon(volumeBtn);
+            });
+
+            volumeBtn.addEventListener('click', () => {
+                this.player.muted = !this.player.muted;
+                this.updateVolumeIcon(volumeBtn);
+            });
+
+            // PiP modu
+            pipBtn.addEventListener('click', async () => {
+                try {
+                    if (document.pictureInPictureElement) {
+                        await document.exitPictureInPicture();
+                    } else {
+                        await this.player.requestPictureInPicture();
+                    }
+                } catch (error) {
+                    console.error('PiP hatası:', error);
+                }
+            });
+
+            // Tam ekran
+            fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+
+            // Ekran yönü değiştiğinde
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    if (window.orientation === 90 || window.orientation === -90) {
+                        this.toggleFullscreen();
+                    }
+                }, 100);
+            });
+        },
+        togglePlayPause: function() {
+            if (!this.player) return;
+            
+            if (this.player.paused) {
+                this.player.play();
+                this.overlay.style.display = 'none';
             } else {
-                videoPlayer.pause();
-                videoOverlay.style.display = 'flex';
+                this.player.pause();
+                this.overlay.style.display = 'flex';
             }
-            updatePlayPauseIcon();
-        }
-
-        function updatePlayPauseIcon() {
-            const icon = playPauseBtn.querySelector('i');
-            if (videoPlayer.paused) {
+            this.updatePlayPauseIcon();
+        },
+        updatePlayPauseIcon: function() {
+            const icon = document.querySelector('#playPauseBtn i');
+            if (!icon) return;
+            
+            if (this.player.paused) {
                 icon.classList.remove('fa-pause');
                 icon.classList.add('fa-play');
             } else {
                 icon.classList.remove('fa-play');
                 icon.classList.add('fa-pause');
             }
-        }
-
-        // İlerleme çubuğu
-        videoPlayer.addEventListener('timeupdate', () => {
-            const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
-            progressBar.value = progress;
-            currentTimeDisplay.textContent = formatTime(videoPlayer.currentTime);
-        });
-
-        progressBar.addEventListener('input', () => {
-            const time = (progressBar.value / 100) * videoPlayer.duration;
-            videoPlayer.currentTime = time;
-        });
-
-        // Ses kontrolü
-        volumeSlider.addEventListener('input', () => {
-            videoPlayer.volume = volumeSlider.value;
-            updateVolumeIcon();
-        });
-
-        volumeBtn.addEventListener('click', () => {
-            videoPlayer.muted = !videoPlayer.muted;
-            updateVolumeIcon();
-        });
-
-        function updateVolumeIcon() {
-            const icon = volumeBtn.querySelector('i');
+        },
+        updateVolumeIcon: function(btn) {
+            const icon = btn.querySelector('i');
+            if (!icon) return;
+            
             icon.classList.remove('fa-volume-up', 'fa-volume-down', 'fa-volume-off', 'fa-volume-mute');
             
-            if (videoPlayer.muted || videoPlayer.volume === 0) {
+            if (this.player.muted || this.player.volume === 0) {
                 icon.classList.add('fa-volume-mute');
-            } else if (videoPlayer.volume < 0.33) {
+            } else if (this.player.volume < 0.33) {
                 icon.classList.add('fa-volume-off');
-            } else if (videoPlayer.volume < 0.67) {
+            } else if (this.player.volume < 0.67) {
                 icon.classList.add('fa-volume-down');
             } else {
                 icon.classList.add('fa-volume-up');
             }
-        }
-
-        // PiP modu
-        pipBtn.addEventListener('click', async () => {
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                } else {
-                    await videoPlayer.requestPictureInPicture();
-                }
-            } catch (error) {
-                console.error('PiP hatası:', error);
-            }
-        });
-
-        // Tam ekran
-        fullscreenBtn.addEventListener('click', toggleFullscreen);
-
-        function toggleFullscreen() {
+        },
+        toggleFullscreen: function() {
+            if (!this.wrapper) return;
+            
             if (!document.fullscreenElement) {
-                if (videoPlayer.requestFullscreen) {
-                    videoPlayer.requestFullscreen();
-                } else if (videoPlayer.webkitRequestFullscreen) {
-                    videoPlayer.webkitRequestFullscreen();
+                if (this.wrapper.requestFullscreen) {
+                    this.wrapper.requestFullscreen();
+                } else if (this.wrapper.webkitRequestFullscreen) {
+                    this.wrapper.webkitRequestFullscreen();
                 }
             } else {
                 if (document.exitFullscreen) {
@@ -1916,24 +1930,15 @@
                     document.webkitExitFullscreen();
                 }
             }
-        }
-
-        // Zaman formatı
-        function formatTime(seconds) {
+        },
+        formatTime: function(seconds) {
             const minutes = Math.floor(seconds / 60);
             seconds = Math.floor(seconds % 60);
             return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
+    };
 
-        // Ekran yönü değiştiğinde
-        window.addEventListener('orientationchange', () => {
-            setTimeout(() => {
-                if (window.orientation === 90 || window.orientation === -90) {
-                    toggleFullscreen();
-                }
-            }, 100);
-        });
-    });
+    document.addEventListener('DOMContentLoaded', () => videoControls.init());
     </script>
 
     <script>
@@ -2047,38 +2052,61 @@
     </script>
 
     <script>
-    function toggleSeason(header) {
-        const seasonItem = header.closest('.season-item');
-        const episodesContainer = seasonItem.querySelector('.season-episodes');
-        const arrow = header.querySelector('.fa-chevron-down');
-        
-        // Maksimum yüksekliği hesapla
-        const content = episodesContainer.querySelector('.p-4');
-        const maxHeight = content.scrollHeight;
-        
-        // Sezonun açık/kapalı durumunu kontrol et
-        const isOpen = episodesContainer.style.maxHeight !== '0px' && episodesContainer.style.maxHeight !== '';
-        
-        // Tüm sezonları kapat
-        document.querySelectorAll('.season-episodes').forEach(container => {
-            container.style.maxHeight = '0px';
-            container.closest('.season-item').querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
-        });
-        
-        // Tıklanan sezonu aç/kapat
-        if (!isOpen) {
-            episodesContainer.style.maxHeight = maxHeight + 'px';
-            arrow.style.transform = 'rotate(180deg)';
-        }
-    }
+    let currentSeasonNumber = 0;
+    let currentEpisodeNumber = 0;
 
-    // Sayfa yüklendiğinde ilk sezonu aç
     document.addEventListener('DOMContentLoaded', function() {
-        const firstSeasonHeader = document.querySelector('.season-header');
-        if (firstSeasonHeader) {
-            toggleSeason(firstSeasonHeader);
+        currentSeasonNumber = parseInt('<%= currentSeason %>') || 0;
+        currentEpisodeNumber = parseInt('<%= currentEpisode %>') || 0;
+        
+        if (currentSeasonNumber && currentEpisodeNumber) {
+            const seasonItems = document.querySelectorAll('.season-item');
+            seasonItems.forEach(item => {
+                const seasonHeader = item.querySelector('.season-header');
+                const seasonNumberText = seasonHeader.querySelector('h3').textContent;
+                const seasonNumber = parseInt(seasonNumberText.match(/\d+/)[0]);
+                
+                if (seasonNumber === currentSeasonNumber) {
+                    toggleSeason(seasonHeader);
+                    
+                    const activeEpisode = item.querySelector(`a[href*="season=${currentSeasonNumber}&episode=${currentEpisodeNumber}"]`);
+                    if (activeEpisode) {
+                        setTimeout(() => {
+                            activeEpisode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 300);
+                    }
+                }
+            });
         }
     });
+
+    function toggleSeason(header) {
+        if (!header) return;
+        
+        const seasonItem = header.closest('.season-item');
+        if (!seasonItem) return;
+        
+        const episodesDiv = seasonItem.querySelector('.season-episodes');
+        const icon = header.querySelector('i');
+        if (!episodesDiv || !icon) return;
+        
+        // Tüm sezonları kapat
+        document.querySelectorAll('.season-episodes').forEach(div => {
+            if (div !== episodesDiv) {
+                div.style.maxHeight = '0px';
+                div.closest('.season-item').querySelector('i').style.transform = 'rotate(0deg)';
+            }
+        });
+        
+        // Seçili sezonu aç/kapat
+        if (episodesDiv.style.maxHeight === '0px' || !episodesDiv.style.maxHeight) {
+            episodesDiv.style.maxHeight = episodesDiv.scrollHeight + 'px';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            episodesDiv.style.maxHeight = '0px';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
     </script>
 
     <script>
@@ -2192,10 +2220,10 @@
         // Tam ekran
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
-                if (videoPlayer.requestFullscreen) {
-                    videoPlayer.requestFullscreen();
-                } else if (videoPlayer.webkitRequestFullscreen) {
-                    videoPlayer.webkitRequestFullscreen();
+                if (videoWrapper.requestFullscreen) {
+                    videoWrapper.requestFullscreen();
+                } else if (videoWrapper.webkitRequestFullscreen) {
+                    videoWrapper.webkitRequestFullscreen();
                 }
             } else {
                 if (document.exitFullscreen) {

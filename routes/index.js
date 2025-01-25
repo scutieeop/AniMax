@@ -70,23 +70,21 @@ router.get('/anime/:id', async (req, res) => {
         })
         .limit(5);
 
-        // Varsayılan olarak ilk sezonun ilk bölümünü seç
-        let episode = null;
-        if (anime.seasons && anime.seasons.length > 0) {
-            const firstSeason = anime.seasons[0];
-            if (firstSeason.episodes && firstSeason.episodes.length > 0) {
-                episode = firstSeason.episodes[0];
-            }
-        }
+        // Seçili bölümü bul
+        let selectedEpisode = null;
+        let selectedSeason = null;
 
-        // Eğer URL'de episode parametresi varsa, o bölümü bul
-        if (req.query.episode) {
-            for (const season of anime.seasons || []) {
-                const foundEpisode = season.episodes.find(ep => ep._id.toString() === req.query.episode);
-                if (foundEpisode) {
-                    episode = foundEpisode;
-                    break;
-                }
+        // URL'den sezon ve bölüm numaralarını al
+        const seasonNumber = parseInt(req.query.season) || 1;
+        const episodeNumber = parseInt(req.query.episode) || 1;
+
+        // Seçili sezonu bul
+        if (anime.seasons && anime.seasons.length > 0) {
+            selectedSeason = anime.seasons.find(s => s.seasonNumber === seasonNumber) || anime.seasons[0];
+            
+            // Seçili bölümü bul
+            if (selectedSeason.episodes && selectedSeason.episodes.length > 0) {
+                selectedEpisode = selectedSeason.episodes.find(e => e.episodeNumber === episodeNumber) || selectedSeason.episodes[0];
             }
         }
 
@@ -96,7 +94,10 @@ router.get('/anime/:id', async (req, res) => {
             averageRating,
             similarAnimes,
             isFavorite,
-            episode
+            episode: selectedEpisode,
+            season: selectedSeason,
+            currentSeason: seasonNumber,
+            currentEpisode: episodeNumber
         });
     } catch (error) {
         console.error('Anime detay sayfası hatası:', error);
