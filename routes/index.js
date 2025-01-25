@@ -70,12 +70,33 @@ router.get('/anime/:id', async (req, res) => {
         })
         .limit(5);
 
+        // Varsayılan olarak ilk sezonun ilk bölümünü seç
+        let episode = null;
+        if (anime.seasons && anime.seasons.length > 0) {
+            const firstSeason = anime.seasons[0];
+            if (firstSeason.episodes && firstSeason.episodes.length > 0) {
+                episode = firstSeason.episodes[0];
+            }
+        }
+
+        // Eğer URL'de episode parametresi varsa, o bölümü bul
+        if (req.query.episode) {
+            for (const season of anime.seasons || []) {
+                const foundEpisode = season.episodes.find(ep => ep._id.toString() === req.query.episode);
+                if (foundEpisode) {
+                    episode = foundEpisode;
+                    break;
+                }
+            }
+        }
+
         res.render('anime-detail', { 
             anime,
             comments,
             averageRating,
             similarAnimes,
-            isFavorite
+            isFavorite,
+            episode
         });
     } catch (error) {
         console.error('Anime detay sayfası hatası:', error);
@@ -106,19 +127,21 @@ router.post('/anime/:id/comment', isAuthenticated, async (req, res) => {
 });
 
 // Yorum sil
-router.delete('/comment/:id', isAuthenticated, async (req, res) => {
+router.post('/api/comments/delete/:id', isAuthenticated, async (req, res) => {
     try {
         const comment = await Comment.findById(req.params.id);
         
         if (!comment) {
-            return res.status(404).json({ error: 'Yorum bulunamadı' });
+            req.flash('error', 'Yorum bulunamadı');
+            return res.redirect('back');
         }
 
         // Sadece admin, founder veya yorumun sahibi silebilir
         if (!(req.user.roles.includes('admin') || 
             req.user.roles.includes('founder') || 
             comment.user.equals(req.user._id))) {
-            return res.status(403).json({ error: 'Bu işlem için yetkiniz yok' });
+            req.flash('error', 'Bu işlem için yetkiniz yok');
+            return res.redirect('back');
         }
 
         comment.isDeleted = true;
@@ -126,10 +149,12 @@ router.delete('/comment/:id', isAuthenticated, async (req, res) => {
         comment.deletedAt = new Date();
         await comment.save();
 
-        res.json({ success: true });
+        req.flash('success', 'Yorum başarıyla silindi');
+        res.redirect('back');
     } catch (error) {
         console.error('Yorum silme hatası:', error);
-        res.status(500).json({ error: 'Yorum silinirken bir hata oluştu' });
+        req.flash('error', 'Yorum silinirken bir hata oluştu');
+        res.redirect('back');
     }
 });
 
@@ -316,6 +341,34 @@ router.get('/yenibolumler', async (req, res) => {
         res.status(500).render('error', {
             message: 'Yeni bölümler yüklenirken bir hata oluştu'
         });
+    }
+});
+
+// Video stream route'u
+router.get('/api/video/:episodeId', isAuthenticated, async (req, res) => {
+    try {
+        const anime = await Anime.findOne({
+            'seasons.episodes._id': req.params.episodeId
+        });
+
+        if (!anime) {
+            return res.status(404).send('Bölüm bulunamadı');
+        }
+
+        // Bölümü bul
+        const episode = anime.seasons
+            .flatMap(season => season.episodes)
+            .find(ep => ep._id.toString() === req.params.episodeId);
+
+        if (!episode) {
+            return res.status(404).send('Bölüm bulunamadı');
+        }
+
+        // Video URL'ini al ve yönlendir
+        res.redirect(episode.videoUrl);
+    } catch (error) {
+        console.error('Video stream hatası:', error);
+        res.status(500).send('Video yüklenirken bir hata oluştu');
     }
 });
 
