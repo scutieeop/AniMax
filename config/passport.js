@@ -52,6 +52,8 @@ passport.use(new DiscordStrategy({
     scope: ['identify', 'email', 'guilds.members.read'],
 }, async (accessToken, refreshToken, profile, done) => {
     try {
+        console.log('Discord profil bilgileri:', profile);
+
         // Discord API'den sunucu üye bilgilerini al
         const guildMemberResponse = await fetch(`https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${profile.id}`, {
             headers: {
@@ -68,12 +70,48 @@ passport.use(new DiscordStrategy({
         // Kurucu kontrolü
         if (FOUNDER_IDS.includes(profile.id)) {
             userRoles.push('founder');
+            console.log(`${profile.username} kurucu olarak işaretlendi`);
         }
 
-        // Admin rolü kontrolü
-        if (guildMember.roles && guildMember.roles.includes(DISCORD_ROLES.ADMIN)) {
-            userRoles.push('admin');
+        // Discord rolleri kontrolü
+        if (guildMember && guildMember.roles) {
+            console.log('Kullanıcının Discord rolleri:', guildMember.roles);
+            console.log('Admin rol ID:', DISCORD_ROLES.ADMIN);
+
+            // Admin rolü kontrolü
+            if (guildMember.roles.includes(DISCORD_ROLES.ADMIN)) {
+                userRoles.push('admin');
+                console.log(`${profile.username} admin olarak işaretlendi`);
+            }
+
+            // Guide rolü kontrolü
+            if (guildMember.roles.includes(DISCORD_ROLES.GUIDE)) {
+                userRoles.push('guide');
+                console.log(`${profile.username} rehber olarak işaretlendi`);
+            }
+
+            // Contributor rolü kontrolü
+            if (guildMember.roles.includes(DISCORD_ROLES.CONTRIBUTOR)) {
+                userRoles.push('contributor');
+                console.log(`${profile.username} paylaşımcı olarak işaretlendi`);
+            }
+
+            // Premium rolü kontrolü
+            if (guildMember.roles.includes(DISCORD_ROLES.PREMIUM)) {
+                userRoles.push('premium');
+                console.log(`${profile.username} premium üye olarak işaretlendi`);
+            }
+
+            // Supporter rolü kontrolü
+            if (guildMember.roles.includes(DISCORD_ROLES.SUPPORTER)) {
+                userRoles.push('supporter');
+                console.log(`${profile.username} destekçi olarak işaretlendi`);
+            }
+        } else {
+            console.log('Discord rolleri alınamadı veya boş:', guildMember);
         }
+
+        console.log('Atanan roller:', userRoles);
 
         // Discord avatar URL'ini oluştur
         let avatarUrl;
@@ -96,7 +134,11 @@ passport.use(new DiscordStrategy({
                 roles: userRoles,
                 discordRoles: guildMember.roles || []
             });
-            console.log('Yeni kullanıcı oluşturuldu:', user.username);
+            console.log('Yeni kullanıcı oluşturuldu:', {
+                username: user.username,
+                roles: user.roles,
+                discordRoles: user.discordRoles
+            });
         } else {
             console.log('Mevcut kullanıcı güncelleniyor:', user.username);
             user.username = profile.username;
@@ -105,8 +147,11 @@ passport.use(new DiscordStrategy({
             user.roles = userRoles;
             user.discordRoles = guildMember.roles || [];
             await user.save();
-            console.log('Kullanıcı güncellendi:', user.username);
-            console.log('Discord rolleri:', user.discordRoles);
+            console.log('Kullanıcı güncellendi:', {
+                username: user.username,
+                roles: user.roles,
+                discordRoles: user.discordRoles
+            });
         }
         
         return done(null, user);

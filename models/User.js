@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
     avatarUrl: String,
     roles: {
         type: [String],
+        enum: ['user', 'admin', 'founder', 'guide', 'contributor', 'premium', 'supporter'],
         default: ['user']
     },
     discordRoles: {
@@ -36,6 +37,8 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, {
+    timestamps: true
 });
 
 // Avatar URL'sini oluşturan virtual alan
@@ -56,8 +59,7 @@ userSchema.methods.isAdmin = function() {
 };
 
 userSchema.methods.isFounder = function() {
-    const founderIds = process.env.FOUNDER_IDS ? process.env.FOUNDER_IDS.split(',') : [];
-    return this.discordId && founderIds.includes(this.discordId);
+    return this.hasRole('founder');
 };
 
 userSchema.methods.isContributor = function() {
@@ -66,6 +68,10 @@ userSchema.methods.isContributor = function() {
 
 userSchema.methods.isGuide = function() {
     return this.hasRole('guide');
+};
+
+userSchema.methods.hasDiscordRole = function(roleId) {
+    return this.discordRoles.includes(roleId);
 };
 
 // Şifre karşılaştırma metodu
