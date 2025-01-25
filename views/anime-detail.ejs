@@ -1609,7 +1609,7 @@
                 <!-- Yorum Formu -->
                 <div class="bg-[#13141f] rounded-lg p-6 mb-6">
                     <h3 class="text-xl font-bold mb-4">Yorum Yap</h3>
-                    <form action="/comments/add" method="POST" class="space-y-4">
+                    <form action="/api/comments/add" method="POST" class="space-y-4">
                         <input type="hidden" name="animeId" value="<%= anime._id %>">
                         
                         <div>
@@ -1670,7 +1670,7 @@
                                     </div>
                                     
                                     <% if (user && comment.canDelete(user)) { %>
-                                        <form action="/comments/delete/<%= comment._id %>" method="POST" class="ml-4">
+                                        <form action="/api/comments/delete/<%= comment._id %>" method="POST" class="ml-4">
                                             <button type="submit" class="text-red-400 hover:text-red-500">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1883,7 +1883,7 @@
     <script>
     async function likeComment(commentId) {
         try {
-            const response = await fetch(`/comments/${commentId}/like`, {
+            const response = await fetch(`/api/comments/${commentId}/like`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
