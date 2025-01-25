@@ -7,6 +7,15 @@ const passport = require('./config/passport');
 const path = require('path');
 const cron = require('node-cron');
 const { exec } = require('child_process');
+const redis = require('redis');
+
+// Redis istemcisi oluştur
+const redisClient = redis.createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.connect().then(() => console.log('Redis bağlantısı başarılı'));
 
 // Environment değişkenlerini kontrol et
 if (!process.env.DISCORD_CLIENT_ID || !process.env.DISCORD_CLIENT_SECRET || !process.env.DISCORD_CALLBACK_URL) {
@@ -105,6 +114,100 @@ const Anime = require('./models/Anime');
 const Comment = require('./models/Comment');
 const Episode = require('./models/Episode');
 
+// Sezon migrasyonu için yardımcı fonksiyon
+async function migrateSeasons() {
+    try {
+        console.log('Sezon migrasyonu başlatılıyor...');
+        const animes = await Anime.find({}).lean();
+        let updatedCount = 0;
+        let processedCount = 0;
+        const batchSize = 10; // Her seferde işlenecek anime sayısı
+        
+        // Animeyi gruplar halinde işle
+        for (let i = 0; i < animes.length; i += batchSize) {
+            const batch = animes.slice(i, i + batchSize);
+            const promises = batch.map(async (anime) => {
+                if (!anime.episodes) return;
+
+                // Sezonları grupla
+                const seasonMap = new Map();
+                
+                anime.episodes.forEach(episode => {
+                    if (!seasonMap.has(episode.season)) {
+                        seasonMap.set(episode.season, []);
+                    }
+                    seasonMap.get(episode.season).push({
+                        name: `Bölüm ${episode.episodeNumber}`,
+                        episodeNumber: episode.episodeNumber,
+                        videoUrl: episode.videoUrl,
+                        duration: '24:00',
+                        _id: episode._id
+                    });
+                });
+
+                // Yeni sezon yapısını oluştur
+                const seasons = Array.from(seasonMap.entries()).map(([seasonNumber, episodes]) => ({
+                    seasonNumber,
+                    episodes: episodes.sort((a, b) => a.episodeNumber - b.episodeNumber)
+                }));
+
+                // Sıralı sezonları kaydet
+                await Anime.findByIdAndUpdate(anime._id, {
+                    $set: {
+                        seasons: seasons.sort((a, b) => a.seasonNumber - b.seasonNumber)
+                    }
+                }, { new: true });
+
+                updatedCount++;
+                processedCount++;
+                
+                if (processedCount % 5 === 0) {
+                    console.log(`İşlenen anime: ${processedCount}/${animes.length}`);
+                }
+            });
+
+            // Her grubu paralel olarak işle
+            await Promise.all(promises);
+            
+            // Her grup arasında kısa bir bekleme süresi
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        console.log(`Migrasyon tamamlandı! ${updatedCount} anime güncellendi.`);
+        console.log('Bir sonraki migrasyon için bekleniyor...');
+    } catch (error) {
+        console.error('Migrasyon hatası:', error);
+    }
+}
+
+// Her 10 dakikada bir çalışacak cron job
+cron.schedule('*/10 * * * *', async () => {
+    const key = 'migration_running';
+    const isRunning = await redisClient.get(key);
+    
+    if (isRunning) {
+        console.log('Başka bir migrasyon zaten çalışıyor, atlanıyor...');
+        return;
+    }
+
+    try {
+        // Migrasyon başladığını işaretle
+        await redisClient.set(key, '1', 'EX', 600); // 10 dakika süreyle kilitle
+        
+        console.log('Zamanlanmış migrasyon başlatılıyor...');
+        await migrateSeasons();
+    } catch (error) {
+        console.error('Migrasyon hatası:', error);
+    } finally {
+        // Migrasyon kilidini kaldır
+        await redisClient.del(key);
+    }
+});
+
+// Proje başladığında ilk çalıştırma
+console.log('Başlangıç migrasyonu başlatılıyor...');
+migrateSeasons();
+
 // Rotalar
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
@@ -135,34 +238,6 @@ app.use((err, req, res, next) => {
         message: 'Bir hata oluştu',
         path: req.path 
     });
-});
-
-// Her 10 dakikada bir migrate-seasons.js'i çalıştır
-cron.schedule('*/10 * * * *', () => {
-    console.log('10 dakikalık migrasyon başlatılıyor...');
-    exec('node migrate-seasons.js', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Migrasyon hatası: ${error}`);
-            return;
-        }
-        console.log(`Migrasyon çıktısı: ${stdout}`);
-        if (stderr) {
-            console.error(`Migrasyon hata çıktısı: ${stderr}`);
-        }
-    });
-});
-
-// Proje başladığında ilk çalıştırma
-console.log('Başlangıç migrasyonu başlatılıyor...');
-exec('node migrate-seasons.js', (error, stdout, stderr) => {
-    if (error) {
-        console.error(`Başlangıç migrasyon hatası: ${error}`);
-        return;
-    }
-    console.log(`Başlangıç migrasyon çıktısı: ${stdout}`);
-    if (stderr) {
-        console.error(`Başlangıç migrasyon hata çıktısı: ${stderr}`);
-    }
 });
 
 const PORT = process.env.PORT || 3000;
