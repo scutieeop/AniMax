@@ -47,7 +47,7 @@ router.get('/anime/:id', async (req, res) => {
             isDeleted: false 
         }).populate({
             path: 'user',
-            select: 'username avatar discordAvatar roles'
+            select: 'username avatar discordAvatar discordId roles'
         }).sort('-createdAt');
 
         // Kullanıcının favorilerini kontrol et
