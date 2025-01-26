@@ -111,5 +111,90 @@
             });
         })();
     </script>
+
+    <style>
+        .top-header {
+            background: rgba(19, 20, 31, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+
+        .top-header.scrolled {
+            background: rgba(19, 20, 31, 0.95);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container img {
+            height: 48px;
+            width: auto;
+            transition: all 0.3s ease;
+        }
+
+        .top-header.scrolled .logo-container img {
+            height: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .logo-container img {
+                height: 40px;
+            }
+            .top-header.scrolled .logo-container img {
+                height: 36px;
+            }
+        }
+    </style>
 </head>
-<body> 
+<body class="bg-[#0f172a] text-white min-h-screen">
+    <!-- Üst Header -->
+    <header class="top-header">
+        <div class="container mx-auto px-4 py-2">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <a href="/" class="logo-container flex items-center gap-2">
+                    <img src="/foto/animax.png" alt="AniMax Logo" class="object-contain">
+                </a>
+
+                <!-- Sağ Menü -->
+                <div class="flex items-center gap-4">
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <a href="/profile" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 transition-all">
+                            <img src="<%= user.discordAvatar || user.avatar || '/images/default-avatar.png' %>" 
+                                alt="<%= user.username %>" 
+                                class="w-8 h-8 rounded-full border-2 border-blue-500/50">
+                            <span class="text-sm font-medium hidden sm:block"><%= user.username %></span>
+                        </a>
+                    <% } else { %>
+                        <a href="/auth/login" class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors">
+                            <i class="fab fa-discord"></i>
+                            <span class="text-sm font-medium">Giriş Yap</span>
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Header için boşluk -->
+    <div class="pt-16">
+        <!-- Sayfa içeriği buraya gelecek -->
+    </div>
+
+    <script>
+        // Scroll olduğunda header'ı güncelle
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.top-header');
+            if (window.scrollY > 10) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html> 
