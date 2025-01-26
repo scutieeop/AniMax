@@ -54,3 +54,21 @@ async function resetDatabase() {
 
 removeKomploField();
 resetDatabase();
+
+// Ana sayfa rotası
+app.get('/', (req, res) => {
+    res.render('index');
+});
+
+// Diğer rotaları devre dışı bırakıyoruz
+/*
+app.get('/yeni', (req, res) => {
+    res.render('yeni');
+});
+
+app.get('/profile', (req, res) => {
+    res.render('profile');
+});
+
+// Diğer muhtemel rotalar...
+*/
