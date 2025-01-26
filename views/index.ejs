@@ -713,70 +713,109 @@
     <main class="main-content">
         <!-- Öne Çıkan Anime -->
         <section class="featured-anime">
-            <div class="featured-image">
-                <img src="<%= popularAnimes[0].imageUrl %>" alt="<%= popularAnimes[0].name %>" 
-                     class="featured-bg">
-                <div class="featured-overlay"></div>
-            </div>
-            <div class="featured-content">
-                <div class="featured-badge mb-4">
-                    <i class="fas fa-crown text-yellow-500 mr-2"></i>
-                    <span class="text-sm font-medium">En Çok İzlenen</span>
+            <% if (popularAnimes && popularAnimes.length > 0) { %>
+                <div class="featured-image">
+                    <img src="<%= popularAnimes[0].imageUrl %>" alt="<%= popularAnimes[0].name %>" class="featured-bg">
+                    <div class="featured-overlay"></div>
                 </div>
-                <h1 class="featured-title"><%= popularAnimes[0].name %></h1>
-                <p class="featured-description">
-                    <%= popularAnimes[0].description || 'Bu popüler animeyi hemen izlemeye başlayın!' %>
-                </p>
-                <div class="featured-meta">
-                    <span class="view-count">
-                        <i class="fas fa-eye"></i>
-                        <%= popularAnimes[0].viewCount %> görüntülenme
-                    </span>
-                    <span class="episode-count">
-                        <i class="fas fa-film"></i>
-                        <%= popularAnimes[0].seasons ? 
-                            popularAnimes[0].seasons.reduce((total, season) => total + season.episodes.length, 0)
-                            : 0 %> bölüm
-                    </span>
+                <div class="featured-content container mx-auto px-4">
+                    <h1 class="text-4xl md:text-5xl font-bold mb-4"><%= popularAnimes[0].name %></h1>
+                    <p class="text-lg text-gray-300 mb-6 line-clamp-3"><%= popularAnimes[0].description %></p>
+                    <div class="flex items-center gap-4">
+                        <a href="/anime/<%= popularAnimes[0]._id %>" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors">
+                            <i class="fas fa-play"></i>
+                            <span>Şimdi İzle</span>
+                        </a>
+                        <div class="flex items-center gap-2 text-gray-400">
+                            <i class="fas fa-eye"></i>
+                            <span><%= popularAnimes[0].viewCount || 0 %> görüntülenme</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex gap-4">
-                    <a href="/anime/<%= popularAnimes[0]._id %>" class="watch-now-button">
-                        <i class="fas fa-play"></i>
-                        <span>Şimdi İzle</span>
-                    </a>
+            <% } else { %>
+                <div class="featured-content container mx-auto px-4 py-20 text-center">
+                    <div class="bg-[#13141f] rounded-lg p-8 max-w-2xl mx-auto">
+                        <i class="fas fa-film text-5xl text-blue-500 mb-4"></i>
+                        <h2 class="text-2xl font-bold mb-2">Henüz Anime Eklenmemiş</h2>
+                        <p class="text-gray-400">Yakında yeni animeler eklenecek. Takipte kalın!</p>
+                    </div>
                 </div>
+            <% } %>
+        </section>
+
+        <!-- Yeni Eklenen Animeler -->
+        <section class="new-animes py-12">
+            <div class="container mx-auto px-4">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-500"></i>
+                    <span>Yeni Eklenen Animeler</span>
+                </h2>
+
+                <% if (newAnimes && newAnimes.length > 0) { %>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                        <% newAnimes.forEach(anime => { %>
+                            <a href="/anime/<%= anime._id %>" class="anime-card">
+                                <div class="relative aspect-[2/3] rounded-lg overflow-hidden group">
+                                    <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" 
+                                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                                        <h3 class="text-lg font-semibold line-clamp-2"><%= anime.name %></h3>
+                                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-300">
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-eye"></i>
+                                                <%= anime.viewCount || 0 %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="bg-[#13141f] rounded-lg p-8 text-center">
+                        <i class="fas fa-film text-4xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400">Henüz anime eklenmemiş.</p>
+                    </div>
+                <% } %>
             </div>
         </section>
 
         <!-- Popüler Animeler -->
-        <section class="mb-12">
-            <h2 class="section-title">
-                <i class="fas fa-fire text-orange-500"></i>
-                <span>Popüler Animeler</span>
-            </h2>
-            <div class="anime-grid">
-                <% popularAnimes.forEach(anime => { %>
-                    <div class="anime-card">
-                        <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="anime-poster">
-                        <div class="anime-info">
-                            <h3 class="anime-title"><%= anime.name %></h3>
-                            <div class="anime-meta">
-                                <span><i class="fas fa-eye text-blue-500 mr-2"></i><%= anime.viewCount %></span>
-                                <span><i class="fas fa-film text-purple-500 mr-2"></i><%=
-                                    anime.seasons ? 
-                                    anime.seasons.reduce((total, season) => total + season.episodes.length, 0)
-                                    : 0
-                                %> Bölüm</span>
-                            </div>
-                        </div>
-                        <div class="watch-overlay">
-                            <a href="/anime/<%= anime._id %>" class="watch-button">
-                                <i class="fas fa-play"></i>
-                                <span>İzle</span>
+        <section class="popular-animes py-12 bg-[#13141f]/50">
+            <div class="container mx-auto px-4">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fas fa-fire text-orange-500"></i>
+                    <span>Popüler Animeler</span>
+                </h2>
+
+                <% if (popularAnimes && popularAnimes.length > 0) { %>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                        <% popularAnimes.forEach(anime => { %>
+                            <a href="/anime/<%= anime._id %>" class="anime-card">
+                                <div class="relative aspect-[2/3] rounded-lg overflow-hidden group">
+                                    <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" 
+                                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                                        <h3 class="text-lg font-semibold line-clamp-2"><%= anime.name %></h3>
+                                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-300">
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-eye"></i>
+                                                <%= anime.viewCount || 0 %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </a>
-                        </div>
+                        <% }); %>
                     </div>
-                <% }); %>
+                <% } else { %>
+                    <div class="bg-[#13141f] rounded-lg p-8 text-center">
+                        <i class="fas fa-fire text-4xl text-gray-600 mb-4"></i>
+                        <p class="text-gray-400">Henüz popüler anime bulunmuyor.</p>
+                    </div>
+                <% } %>
             </div>
         </section>
 
