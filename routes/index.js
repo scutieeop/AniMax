@@ -18,9 +18,15 @@ router.get('/', async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(10);
 
+        // Yeni eklenen animeleri getir
+        const newAnimes = await Anime.find()
+            .sort({ createdAt: -1 })
+            .limit(5);
+
         res.render('index', {
             popularAnimes,
             recentAnimes,
+            newAnimes,
             user: req.user
         });
     } catch (error) {
